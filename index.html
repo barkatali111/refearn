@@ -1497,31 +1497,54 @@
 
 <script>
 // ============================================================
-// DATA STORE (localStorage-backed)
+// NEW SUPABASE CONFIGURATION & DATA STORE (REPLACED)
 // ============================================================
+const SUPABASE_URL = "https://czvxpyvpqjdhbegiotjr.supabase.co"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6dnhweXZwcWpkaGJlZ2lvdGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjQ2ODcsImV4cCI6MjA5Njg0MDY4N30.khC3HoKM_QuWjpeXZD6LRMpfkvk6UA5xe4yXHMS9JhI";
+
+// Initialize Supabase Client
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'admin123';
 const MIN_WITHDRAW = 50;
 
-function getStore(key, def) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
-}
-function setStore(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-}
-
-function getUsers() { return getStore('re_users', []); }
-function setUsers(u) { setStore('re_users', u); }
-function getWithdrawals() { return getStore('re_withdrawals', []); }
-function setWithdrawals(w) { setStore('re_withdrawals', w); }
-function getMessages() { return getStore('re_messages', []); }
-function setMessages(m) { setStore('re_messages', m); }
-function getBroadcast() { return getStore('re_broadcast', null); }
-function setBroadcast(b) { setStore('re_broadcast', b); }
-
 let currentUser = null;
 let selectedPM = null;
 let replyingTo = null;
+
+// Real-time Cloud Functions instead of localstorage
+async function getUsers() {
+  const { data, error } = await supabase.from('re_users').select('*');
+  if (error) {
+    console.error("Error fetching users:", error.message);
+    return [];
+  }
+  return data;
+}
+
+async function setUsers(u) {
+  // Not needed anymore because we update single rows directly via Supabase query
+}
+
+async function getWithdrawals() {
+  const { data, error } = await supabase.from('re_withdrawals').select('*').order('created_at', { ascending: false });
+  if (error) return [];
+  return data;
+}
+
+async function getMessages() {
+  const { data, error } = await supabase.from('re_messages').select('*').order('created_at', { ascending: false });
+  if (error) return [];
+  return data;
+}
+
+async function getBroadcast() {
+  const { data, error } = await supabase.from('re_broadcast').select('*').limit(1).single();
+  if (error) return null;
+  return data;
+}
+
 
 // ============================================================
 // TICKER DATA (fake rolling withdrawals)
@@ -1593,7 +1616,10 @@ function doLogin() {
   }, 1800);
 }
 
-function doRegister() {
+// ============================================================
+// NEW ASYNC REGISTER FUNCTION (SUPABASE CLOUD INTEGRATED)
+// ============================================================
+async function doRegister() {
   const name = document.getElementById('reg-name').value.trim();
   const username = document.getElementById('reg-username').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -1605,50 +1631,81 @@ function doRegister() {
   if (pass !== pass2) { showToast('❌','Passwords do not match!'); return; }
   if (pass.length < 6) { showToast('⚠️','Password must be at least 6 characters.'); return; }
 
-  const users = getUsers();
-  if (users.find(x=>x.username===username)) { showToast('❌','Username already taken. Choose another.'); return; }
-  if (users.find(x=>x.email===email)) { showToast('❌','Email already registered.'); return; }
+  showLoading('Creating your cloud account...');
 
-  showLoading('Creating your account...');
-  setTimeout(()=>{
-    hideLoading();
-    const code = generateCode();
-    const newUser = {
-      id: 'u_' + Date.now(),
-      name, username, email, password: pass,
-      role: 'user',
-      balance: 5, // sign-up bonus
-      referrals: 0,
-      withdrawn: 0,
-      code,
-      joined: new Date().toLocaleDateString(),
-      referredBy: refCode || null,
-      referralHistory: [],
-      messages: [],
-      notification: getBroadcast()
-    };
-    // Credit referrer
-    if (refCode) {
-      const refIdx = users.findIndex(x=>x.code===refCode);
-      if (refIdx !== -1) {
-        users[refIdx].balance = (users[refIdx].balance||0) + 2;
-        users[refIdx].referrals = (users[refIdx].referrals||0) + 1;
-        users[refIdx].referralHistory = users[refIdx].referralHistory || [];
-        users[refIdx].referralHistory.push({ user: username, date: new Date().toLocaleDateString(), earned: 2 });
-        // Flag so the referrer sees an instant notification next time their dashboard loads
-        users[refIdx].pendingRefNotif = users[refIdx].pendingRefNotif || [];
-        users[refIdx].pendingRefNotif.push(username);
+  // Get freshest users list from Supabase cloud database
+  const users = await getUsers();
+  
+  if (users.find(x => x.username.toLowerCase() === username.toLowerCase())) { 
+    hideLoading(); showToast('❌','Username already taken. Choose another.'); return; 
+  }
+  if (users.find(x => x.email.toLowerCase() === email.toLowerCase())) { 
+    hideLoading(); showToast('❌','Email already registered.'); return; 
+  }
+
+  const code = generateCode();
+  const newUser = {
+    id: 'u_' + Date.now(),
+    name: name,
+    username: username,
+    email: email,
+    password: pass,
+    role: 'user',
+    balance: 5.0, // Sign-up bonus for new friend
+    referrals: 0,
+    withdrawn: 0,
+    code: code,
+    joined: new Date().toLocaleDateString(),
+    referredBy: refCode || null,
+    referralHistory: [],
+    messages: [],
+    pendingRefNotif: []
+  };
+
+  // If new friend signed up using an invite link code
+  if (refCode) {
+    const refUser = users.find(x => x.code === refCode);
+    if (refUser) {
+      const updatedBalance = (refUser.balance || 0) + 2.0; // Give $2.00 to the host friend
+      const updatedReferrals = (refUser.referrals || 0) + 1;
+      const updatedHistory = refUser.referralHistory || [];
+      updatedHistory.push({ user: username, date: new Date().toLocaleDateString(), earned: 2.0 });
+      
+      const updatedNotifications = refUser.pendingRefNotif || [];
+      updatedNotifications.push(username);
+
+      // Instant Update on Supabase cloud data table
+      await supabase.from('re_users').update({
+        balance: updatedBalance,
+        referrals: updatedReferrals,
+        referralHistory: updatedHistory,
+        pendingRefNotif: updatedNotifications
+      }).eq('id', refUser.id);
+
+      // If the inviter is current active user on this window, sync balance instantly
+      if (currentUser && currentUser.id === refUser.id) {
+        currentUser.balance = updatedBalance;
+        currentUser.referrals = updatedReferrals;
+        currentUser.referralHistory = updatedHistory;
       }
     }
-    users.push(newUser);
-    setUsers(users);
-    // Update stats
-    updateAuthStats();
-    currentUser = newUser;
-    showToast('🎉','Account created! $5 bonus added to your wallet!');
-    setTimeout(launchApp, 800);
-  }, 2200);
+  }
+
+  // Save the new user record onto Supabase
+  const { error } = await supabase.from('re_users').insert([newUser]);
+
+  hideLoading();
+  if (error) {
+    showToast('❌', 'Database Error: ' + error.message);
+    return;
+  }
+
+  updateAuthStats();
+  currentUser = newUser;
+  showToast('🎉','Account created! $5 bonus added to your wallet!');
+  setTimeout(launchApp, 800);
 }
+
 
 function doLogout() {
   clearSession();
