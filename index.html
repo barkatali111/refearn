@@ -1153,7 +1153,7 @@
 
       <!-- AD SLOT 1: Monetag In-Page Push (Banner) — Dashboard -->
       <div class="ad-slot ad-monetag-push" id="ad-monetag-push">
-        <script>(function(s){s.dataset.zone='11137972',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+        <script>(function(s){s.dataset.zone='11138039',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
       </div>
 
       <!-- How It Works -->
@@ -1635,6 +1635,9 @@ function doRegister() {
         users[refIdx].referrals = (users[refIdx].referrals||0) + 1;
         users[refIdx].referralHistory = users[refIdx].referralHistory || [];
         users[refIdx].referralHistory.push({ user: username, date: new Date().toLocaleDateString(), earned: 2 });
+        // Flag so the referrer sees an instant notification next time their dashboard loads
+        users[refIdx].pendingRefNotif = users[refIdx].pendingRefNotif || [];
+        users[refIdx].pendingRefNotif.push(username);
       }
     }
     users.push(newUser);
@@ -1722,6 +1725,16 @@ function refreshDashboard() {
     const users = getUsers();
     const fresh = users.find(x=>x.id===currentUser.id);
     if (fresh) currentUser = fresh;
+
+    // Show instant notification(s) for new referrals credited since last check
+    if (currentUser.pendingRefNotif && currentUser.pendingRefNotif.length) {
+      currentUser.pendingRefNotif.forEach(uname=>{
+        showToast('🎉', `@${uname} joined using your link! +$2.00 added to your balance.`);
+      });
+      currentUser.pendingRefNotif = [];
+      const idx = users.findIndex(x=>x.id===currentUser.id);
+      if (idx !== -1) { users[idx].pendingRefNotif = []; setUsers(users); }
+    }
   }
   document.getElementById('dash-balance').textContent = '$' + (currentUser.balance||0).toFixed(2);
   document.getElementById('dash-referrals').textContent = currentUser.referrals||0;
