@@ -512,6 +512,126 @@
   .step-text h4 { font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
   .step-text p { font-size: 0.82rem; color: var(--muted); }
 
+  /* ======== WITHDRAW SUCCESSFUL PANEL ======== */
+  .wd-success-panel {
+    background: var(--card);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .wd-success-header {
+    background: linear-gradient(90deg, rgba(0,212,170,0.12), rgba(108,99,255,0.08));
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .wd-success-header .live-dot {
+    width: 8px; height: 8px;
+    background: var(--accent2);
+    border-radius: 50%;
+    animation: pulse-dot 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.4; transform:scale(1.3); }
+  }
+  .wd-success-header span {
+    font-family: var(--font-head);
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .wd-success-viewport {
+    height: 58px;
+    overflow: hidden;
+    position: relative;
+  }
+  .wd-success-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .wd-success-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    height: 58px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .wd-success-item .ws-icon {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .wd-success-item .ws-info { flex: 1; min-width: 0; }
+  .wd-success-item .ws-method {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .wd-success-item .ws-acc {
+    font-size: 0.73rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+  .wd-success-item .ws-amt {
+    font-family: var(--font-head);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+  .wd-success-item .ws-badge {
+    background: rgba(16,185,129,0.15);
+    color: var(--success);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  /* Currency Toggle */
+  .currency-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .currency-toggle button {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: 0.3px;
+  }
+  .currency-toggle button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .currency-toggle button:hover:not(.active) {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
   /* ======== REFERRAL PAGE ======== */
   .referral-hero {
     background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,170,0.08));
@@ -1115,20 +1235,15 @@
         <button class="close-notif" onclick="closeNotif()">✕</button>
       </div>
 
-      <!-- Benefit Withdrawal Ticker -->
-      <div class="ticker-wrap">
-        <div class="ticker-label">🔴 Live Withdrawals</div>
-        <div class="ticker-scroll" id="ticker-scroll">
-          <!-- JS fills this -->
-        </div>
-      </div>
-
       <!-- Stats Cards -->
       <div class="cards-grid">
         <div class="stat-card">
           <div class="label">Total Balance</div>
           <div class="value" id="dash-balance">$0.00</div>
           <div class="sub">+$5 sign-up bonus</div>
+          <div style="margin-top:8px;">
+            <button id="cur-cycle-btn" onclick="cycleCurrency()" style="background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.4);border-radius:20px;padding:3px 12px;font-size:0.72rem;font-weight:700;color:var(--accent);cursor:pointer;transition:all .2s;letter-spacing:0.5px;" title="Switch currency">🔄 <span id="cur-label">USD</span></button>
+          </div>
           <div class="icon-bg">💰</div>
         </div>
         <div class="stat-card">
@@ -1154,6 +1269,19 @@
       <!-- AD SLOT 1: Monetag In-Page Push (Banner) — Dashboard -->
       <div class="ad-slot ad-monetag-push" id="ad-monetag-push">
         <script>(function(s){s.dataset.zone='11138039',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script> 
+      </div>
+
+      <!-- Withdraw Successful Panel -->
+      <div class="wd-success-panel">
+        <div class="wd-success-header">
+          <div class="live-dot"></div>
+          <span>✅ Withdraw Successful</span>
+        </div>
+        <div class="wd-success-viewport">
+          <div class="wd-success-list" id="wd-success-list">
+            <!-- JS fills this -->
+          </div>
+        </div>
       </div>
 
       <!-- How It Works -->
@@ -1588,8 +1716,8 @@ async function supaClaimDelta(userId) {
 // ============================================================
 // DATA STORE (localStorage-backed)
 // ============================================================
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin123';
+const ADMIN_USER = 'barkat340';
+const ADMIN_PASS = 'barkat342';
 const MIN_WITHDRAW = 50;
 
 function getStore(key, def) {
@@ -1615,6 +1743,178 @@ let replyingTo = null;
 // ============================================================
 // TICKER DATA (fake rolling withdrawals)
 // ============================================================
+// ============================================================
+// WITHDRAW SUCCESSFUL — vertical scroll panel (bottom to top)
+// ============================================================
+const wdSuccessData = [
+  { method:'EasyPaisa', icon:'📱', acc:'+923******342', amt:'$58.4' },
+  { method:'UPI',       icon:'💳', acc:'ravi****@upi',  amt:'$76.2' },
+  { method:'USDT',      icon:'🪙', acc:'8A91****K7P3',  amt:'$145.7' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******781', amt:'$92.8' },
+  { method:'UPI',       icon:'💳', acc:'aman****@upi',  amt:'$118.5' },
+  { method:'USDT',      icon:'🪙', acc:'M4Q2****X9L8',  amt:'$167.3' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******564', amt:'$134.6' },
+  { method:'UPI',       icon:'💳', acc:'rohit****@upi', amt:'$89.4' },
+  { method:'USDT',      icon:'🪙', acc:'Z7N5****B2R1',  amt:'$192.8' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******129', amt:'$73.5' },
+  { method:'UPI',       icon:'💳', acc:'vikas****@upi', amt:'$156.2' },
+  { method:'USDT',      icon:'🪙', acc:'C8D3****T6Y4',  amt:'$104.7' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******908', amt:'$187.9' },
+  { method:'UPI',       icon:'💳', acc:'deep****@upi',  amt:'$63.8' },
+  { method:'USDT',      icon:'🪙', acc:'H2K9****P5M7',  amt:'$128.4' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******453', amt:'$115.2' },
+  { method:'UPI',       icon:'💳', acc:'arun****@upi',  amt:'$174.6' },
+  { method:'USDT',      icon:'🪙', acc:'R6W1****N8Q2',  amt:'$82.9' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******672', amt:'$199.4' },
+  { method:'UPI',       icon:'💳', acc:'raj****@upi',   amt:'$97.3' },
+  { method:'USDT',      icon:'🪙', acc:'L3V7****S4A9',  amt:'$153.8' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******315', amt:'$68.7' },
+  { method:'UPI',       icon:'💳', acc:'mohi****@upi',  amt:'$142.5' },
+  { method:'USDT',      icon:'🪙', acc:'F9J2****D7K6',  amt:'$178.2' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******847', amt:'$126.9' },
+  { method:'UPI',       icon:'💳', acc:'sani****@upi',  amt:'$54.8' },
+  { method:'USDT',      icon:'🪙', acc:'P5X8****H3C1',  amt:'$189.6' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******596', amt:'$171.3' },
+  { method:'UPI',       icon:'💳', acc:'akas****@upi',  amt:'$108.7' },
+  { method:'USDT',      icon:'🪙', acc:'Y1B4****R9T5',  amt:'$136.5' },
+  // 70 more auto-generated entries to reach 100
+  { method:'EasyPaisa', icon:'📱', acc:'+923******201', amt:'$88.3' },
+  { method:'UPI',       icon:'💳', acc:'kiran****@upi', amt:'$162.7' },
+  { method:'USDT',      icon:'🪙', acc:'K2P8****A5N3',  amt:'$110.9' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******734', amt:'$79.6' },
+  { method:'UPI',       icon:'💳', acc:'suresh****@upi',amt:'$193.2' },
+  { method:'USDT',      icon:'🪙', acc:'D4T1****Q7B6',  amt:'$57.4' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******412', amt:'$148.8' },
+  { method:'UPI',       icon:'💳', acc:'priya****@upi', amt:'$72.1' },
+  { method:'USDT',      icon:'🪙', acc:'W9M3****L2X8',  amt:'$185.6' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******863', amt:'$93.4' },
+  { method:'UPI',       icon:'💳', acc:'neha****@upi',  amt:'$131.7' },
+  { method:'USDT',      icon:'🪙', acc:'G6F4****Z1V9',  amt:'$167.9' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******527', amt:'$56.2' },
+  { method:'UPI',       icon:'💳', acc:'amit****@upi',  amt:'$179.4' },
+  { method:'USDT',      icon:'🪙', acc:'B3R7****S8J2',  amt:'$102.5' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******189', amt:'$144.1' },
+  { method:'UPI',       icon:'💳', acc:'pooja****@upi', amt:'$87.6' },
+  { method:'USDT',      icon:'🪙', acc:'N5A2****T4H7',  amt:'$196.3' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******641', amt:'$69.8' },
+  { method:'UPI',       icon:'💳', acc:'raman****@upi', amt:'$158.5' },
+  { method:'USDT',      icon:'🪙', acc:'X8C6****P9D1',  amt:'$123.7' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******358', amt:'$182.4' },
+  { method:'UPI',       icon:'💳', acc:'sachin****@upi',amt:'$65.9' },
+  { method:'USDT',      icon:'🪙', acc:'Q1Y9****K3W5',  amt:'$139.2' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******972', amt:'$97.7' },
+  { method:'UPI',       icon:'💳', acc:'divya****@upi', amt:'$174.8' },
+  { method:'USDT',      icon:'🪙', acc:'J7V4****M6R2',  amt:'$83.1' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******216', amt:'$161.5' },
+  { method:'UPI',       icon:'💳', acc:'rahul****@upi', amt:'$52.6' },
+  { method:'USDT',      icon:'🪙', acc:'E2N8****B4F9',  amt:'$188.4' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******485', amt:'$116.3' },
+  { method:'UPI',       icon:'💳', acc:'simran****@upi',amt:'$143.9' },
+  { method:'USDT',      icon:'🪙', acc:'H5K1****T7C3',  amt:'$77.5' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******739', amt:'$168.6' },
+  { method:'UPI',       icon:'💳', acc:'kapil****@upi', amt:'$91.2' },
+  { method:'USDT',      icon:'🪙', acc:'S9L6****Q2A8',  amt:'$132.7' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******163', amt:'$54.3' },
+  { method:'UPI',       icon:'💳', acc:'naina****@upi', amt:'$176.1' },
+  { method:'USDT',      icon:'🪙', acc:'R4P7****D5N1',  amt:'$109.8' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******824', amt:'$191.4' },
+  { method:'UPI',       icon:'💳', acc:'vikram****@upi',amt:'$62.7' },
+  { method:'USDT',      icon:'🪙', acc:'C6W3****J8B4',  amt:'$147.6' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******591', amt:'$84.9' },
+  { method:'UPI',       icon:'💳', acc:'anita****@upi', amt:'$165.3' },
+  { method:'USDT',      icon:'🪙', acc:'T2M9****X5Y7',  amt:'$119.4' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******347', amt:'$73.8' },
+  { method:'UPI',       icon:'💳', acc:'manish****@upi',amt:'$152.6' },
+  { method:'USDT',      icon:'🪙', acc:'L8F1****G4K2',  amt:'$186.9' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******658', amt:'$61.4' },
+  { method:'UPI',       icon:'💳', acc:'sunita****@upi',amt:'$138.7' },
+  { method:'USDT',      icon:'🪙', acc:'A3V6****Z9P8',  amt:'$95.3' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******912', amt:'$177.5' },
+  { method:'UPI',       icon:'💳', acc:'rakesh****@upi',amt:'$58.9' },
+  { method:'USDT',      icon:'🪙', acc:'N7B2****W4H6',  amt:'$143.1' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******274', amt:'$106.8' },
+  { method:'UPI',       icon:'💳', acc:'meena****@upi', amt:'$169.4' },
+  { method:'USDT',      icon:'🪙', acc:'Q5T8****Y1D3',  amt:'$81.7' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******437', amt:'$198.2' },
+  { method:'UPI',       icon:'💳', acc:'anil****@upi',  amt:'$74.6' },
+  { method:'USDT',      icon:'🪙', acc:'F4C9****M3R7',  amt:'$127.3' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******786', amt:'$155.8' },
+  { method:'UPI',       icon:'💳', acc:'geeta****@upi', amt:'$89.1' },
+  { method:'USDT',      icon:'🪙', acc:'K8A5****V2T4',  amt:'$173.6' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******123', amt:'$66.4' },
+  { method:'UPI',       icon:'💳', acc:'sanjay****@upi',amt:'$149.7' },
+  { method:'USDT',      icon:'🪙', acc:'D1Y6****B8N5',  amt:'$192.1' },
+  { method:'EasyPaisa', icon:'📱', acc:'+923******569', amt:'$78.3' },
+  { method:'UPI',       icon:'💳', acc:'rekha****@upi', amt:'$117.5' },
+];
+
+let wdSuccessInterval = null;
+
+function buildWdSuccessPanel() {
+  const list = document.getElementById('wd-success-list');
+  if (!list) return;
+
+  const itemH = 58; // must match CSS height
+  const total = wdSuccessData.length;
+
+  // Render all items
+  list.innerHTML = wdSuccessData.map(d => `
+    <div class="wd-success-item">
+      <div class="ws-icon">${d.icon}</div>
+      <div class="ws-info">
+        <div class="ws-method">${d.method}</div>
+        <div class="ws-acc">${d.acc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+        <div class="ws-amt">${d.amt}</div>
+        <div class="ws-badge">✅ Paid</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Start at last item (bottom), scroll upward one by one
+  let idx = total - 1;
+  list.style.transition = 'none';
+  list.style.transform = `translateY(-${idx * itemH}px)`;
+
+  if (wdSuccessInterval) clearInterval(wdSuccessInterval);
+  wdSuccessInterval = setInterval(() => {
+    if (idx <= 0) idx = total - 1;
+    else idx--;
+    list.style.transition = 'transform 0.5s ease';
+    list.style.transform = `translateY(-${idx * itemH}px)`;
+  }, 5000);
+}
+
+// ============================================================
+// CURRENCY CYCLE (single button: USD → PKR → INR → USD)
+// ============================================================
+let currentCurrency = 'USD';
+const currencyRates   = { USD: 1, PKR: 278.5, INR: 83.2 };
+const currencySymbols = { USD: '$', PKR: '₨', INR: '₹' };
+const currencyOrder   = ['USD', 'PKR', 'INR'];
+
+function cycleCurrency() {
+  const idx = currencyOrder.indexOf(currentCurrency);
+  currentCurrency = currencyOrder[(idx + 1) % currencyOrder.length];
+  const lbl = document.getElementById('cur-label');
+  if (lbl) lbl.textContent = currentCurrency;
+  updateBalanceDisplay();
+}
+
+function updateBalanceDisplay() {
+  if (!currentUser) return;
+  const usdBalance = currentUser.balance || 0;
+  const rate = currencyRates[currentCurrency] || 1;
+  const sym  = currencySymbols[currentCurrency] || '$';
+  const converted = usdBalance * rate;
+  const formatted = currentCurrency === 'USD'
+    ? `${sym}${converted.toFixed(2)}`
+    : `${sym}${Math.round(converted).toLocaleString()}`;
+  const el = document.getElementById('dash-balance');
+  if (el) el.textContent = formatted;
+}
+
 const tickerMethods = [
   { method: 'EasyPaisa', prefix: '+92', suffix: '342', type: 'ep' },
   { method: 'UPI', prefix: '', suffix: '@upi', type: 'upi' },
@@ -1627,6 +1927,8 @@ function fakePhone(type) {
   return `0x${[...Array(8)].map(()=>Math.floor(Math.random()*16).toString(16)).join('')}...`;
 }
 function buildTicker() {
+  const el = document.getElementById('ticker-scroll');
+  if (!el) return; // ticker removed — safe exit
   const items = [];
   for (let i = 0; i < 14; i++) {
     const m = tickerMethods[Math.floor(Math.random()*3)];
@@ -1634,8 +1936,7 @@ function buildTicker() {
     const acc = fakePhone(m.type);
     items.push(`<span class="ticker-item">💰 <span class="amount">$${amt}</span> withdrawn via <span class="method">${m.method}</span> to ${acc}</span>`);
   }
-  const el = document.getElementById('ticker-scroll');
-  const html = items.join('') + items.join(''); // duplicate for seamless loop
+  const html = items.join('') + items.join('');
   el.innerHTML = html;
 }
 
@@ -1786,6 +2087,7 @@ function launchApp() {
   }
 
   buildTicker();
+  buildWdSuccessPanel();
   // Register user's ref code in Supabase on every login (ensures cross-browser visibility)
   if (currentUser.role !== 'admin') {
     supaRegisterRefCode(currentUser.id, currentUser.code).catch(()=>{});
@@ -1882,7 +2184,7 @@ async function refreshDashboard() {
       }
     } catch(e) { /* Supabase unreachable — continue with local data */ }
   }
-  document.getElementById('dash-balance').textContent = '$' + (currentUser.balance||0).toFixed(2);
+  updateBalanceDisplay();
   document.getElementById('dash-referrals').textContent = currentUser.referrals||0;
   document.getElementById('dash-withdrawn').textContent = '$' + (currentUser.withdrawn||0).toFixed(2);
   const users = getUsers();
