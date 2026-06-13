@@ -1,1581 +1,2305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="monetag" content="3dd824a20e99260291fd3177a03a6bf9">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EarnRef – Referral Rewards Platform</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>RefEarn – Earn While You Share</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
   :root {
-    --bg: #0a0d14;
-    --bg2: #111520;
-    --bg3: #161b28;
-    --card: #1a2035;
-    --card2: #1f2740;
-    --border: #2a3450;
-    --accent: #4f8ef7;
-    --accent2: #7c5cfc;
-    --green: #22d3a5;
-    --yellow: #f7c94f;
-    --red: #f75f5f;
-    --text: #e8edf8;
-    --text2: #8a96b0;
-    --text3: #5a6480;
-    --glow: rgba(79,142,247,0.18);
-    --grad: linear-gradient(135deg, #4f8ef7 0%, #7c5cfc 100%);
-    --grad2: linear-gradient(135deg, #22d3a5 0%, #4f8ef7 100%);
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --card: #151e2e;
+    --border: #1f2d45;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --accent3: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --white: #ffffff;
+    --success: #10b981;
+    --font-head: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --glow: 0 0 24px rgba(108,99,255,0.25);
   }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
-
-  /* ===== LANDING PAGE ===== */
-  #landing-page { display:flex; flex-direction:column; min-height:100vh; }
-
-  .landing-hero { background:var(--bg2); padding:60px 20px 40px; text-align:center; position:relative; overflow:hidden; }
-  .landing-hero::before { content:''; position:absolute; top:-100px; left:50%; transform:translateX(-50%); width:600px; height:600px; background:radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%); pointer-events:none; }
-
-  .logo-wrap { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:32px; }
-  .logo-icon { width:44px; height:44px; background:var(--grad); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 0 20px rgba(79,142,247,0.4); }
-  .logo-text { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-
-  .hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(79,142,247,0.12); border:1px solid rgba(79,142,247,0.3); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--accent); margin-bottom:20px; }
-  .hero-badge span { width:6px; height:6px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
-
-  h1.hero-title { font-family:'Space Grotesk',sans-serif; font-size:clamp(28px,5vw,52px); font-weight:700; line-height:1.15; margin-bottom:16px; }
-  h1.hero-title em { font-style:normal; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .hero-sub { color:var(--text2); font-size:15px; max-width:480px; margin:0 auto 32px; line-height:1.7; }
-
-  .stats-row { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:32px; }
-  .stat-pill { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 20px; text-align:center; min-width:100px; }
-  .stat-num { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--accent); }
-  .stat-lbl { font-size:11px; color:var(--text3); margin-top:2px; }
-
-  .auth-box { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px 24px; max-width:420px; margin:0 auto; }
-  .tab-row { display:flex; background:var(--bg3); border-radius:10px; padding:4px; margin-bottom:24px; }
-  .tab-btn { flex:1; padding:9px; border:none; background:transparent; color:var(--text2); font-size:14px; font-weight:500; border-radius:8px; cursor:pointer; transition:.2s; font-family:'Inter',sans-serif; }
-  .tab-btn.active { background:var(--accent); color:#fff; box-shadow:0 2px 12px rgba(79,142,247,0.35); }
-
-  .auth-form { display:flex; flex-direction:column; gap:14px; }
-  .input-wrap { position:relative; }
-  .input-wrap label { display:block; font-size:12px; color:var(--text2); margin-bottom:6px; font-weight:500; letter-spacing:.3px; }
-  .auth-input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-size:14px; font-family:'Inter',sans-serif; outline:none; transition:.2s; }
-  .auth-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,142,247,0.15); }
-  .auth-input::placeholder { color:var(--text3); }
-  .btn-primary { width:100%; padding:13px; background:var(--grad); border:none; border-radius:10px; color:#fff; font-size:15px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:.2s; box-shadow:0 4px 18px rgba(79,142,247,0.3); }
-  .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
-  .btn-primary:active { transform:translateY(0); }
-
-  .features-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:24px 16px; max-width:480px; margin:0 auto; }
-  .feat-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 12px; text-align:center; }
-  .feat-icon { font-size:24px; margin-bottom:8px; }
-  .feat-title { font-size:13px; font-weight:600; margin-bottom:4px; }
-  .feat-desc { font-size:11px; color:var(--text2); line-height:1.5; }
-
-  /* Ticker */
-  .ticker-wrap { background:rgba(34,211,165,0.07); border-top:1px solid rgba(34,211,165,0.15); border-bottom:1px solid rgba(34,211,165,0.15); padding:10px 0; overflow:hidden; position:relative; }
-  .ticker-track { display:flex; gap:0; animation:tickerScroll 40s linear infinite; white-space:nowrap; }
-  .ticker-item { padding:0 40px; font-size:13px; color:var(--green); font-weight:500; display:flex; align-items:center; gap:8px; }
-  .ticker-item .t-icon { font-size:15px; }
-  @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-
-  /* ===== LOADING OVERLAY ===== */
-  #loading-overlay { position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity .4s; }
-  #loading-overlay.hidden { opacity:0; pointer-events:none; }
-  .loader-ring { width:56px; height:56px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
-  .loader-text { font-size:14px; color:var(--text2); }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-  /* ===== DASHBOARD ===== */
-  #dashboard-page { display:none; flex-direction:column; min-height:100vh; }
-
-  /* Top Nav */
-  .top-nav { position:sticky; top:0; z-index:100; background:rgba(10,13,20,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
-  .nav-left { display:flex; align-items:center; gap:12px; }
-  .hamburger { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:7px; cursor:pointer; display:flex; flex-direction:column; gap:4px; }
-  .ham-line { width:18px; height:2px; background:var(--text); border-radius:2px; transition:.3s; }
-  .hamburger.open .ham-line:nth-child(1) { transform:rotate(45deg) translate(4px,4px); }
-  .hamburger.open .ham-line:nth-child(2) { opacity:0; }
-  .hamburger.open .ham-line:nth-child(3) { transform:rotate(-45deg) translate(4px,-4px); }
-
-  .nav-logo { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .nav-right { display:flex; align-items:center; gap:10px; }
-  .nav-balance { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:7px 14px; font-size:13px; }
-  .nav-balance strong { color:var(--green); font-weight:700; }
-  .notif-btn { position:relative; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:7px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
-  .notif-dot { position:absolute; top:4px; right:4px; width:8px; height:8px; background:var(--red); border-radius:50%; border:2px solid var(--bg); display:none; }
-  .notif-dot.show { display:block; }
-
-  /* Side Drawer */
-  .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:150; display:none; }
-  .drawer-overlay.open { display:block; }
-  .side-drawer { position:fixed; top:0; left:-280px; width:260px; height:100vh; background:var(--bg2); border-right:1px solid var(--border); z-index:200; transition:.3s; display:flex; flex-direction:column; }
-  .side-drawer.open { left:0; }
-  .drawer-head { padding:20px 16px; border-bottom:1px solid var(--border); }
-  .drawer-user { display:flex; align-items:center; gap:10px; }
-  .drawer-avatar { width:40px; height:40px; background:var(--grad); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; }
-  .drawer-name { font-size:14px; font-weight:600; }
-  .drawer-email { font-size:11px; color:var(--text2); margin-top:2px; }
-  .drawer-nav { flex:1; padding:12px 0; overflow-y:auto; }
-  .drawer-item { display:flex; align-items:center; gap:12px; padding:12px 18px; font-size:14px; color:var(--text2); cursor:pointer; transition:.2s; border-left:3px solid transparent; }
-  .drawer-item:hover,.drawer-item.active { color:var(--text); background:rgba(79,142,247,0.08); border-left-color:var(--accent); }
-  .drawer-item .d-icon { font-size:18px; width:22px; }
-  .drawer-item.admin-link { color:var(--yellow); }
-  .drawer-item.admin-link:hover { background:rgba(247,201,79,0.08); border-left-color:var(--yellow); }
-  .drawer-item.danger { color:var(--red); }
-  .drawer-item.danger:hover { background:rgba(247,95,95,0.08); border-left-color:var(--red); }
-
-  /* Main content */
-  .main-content { flex:1; padding:16px; max-width:560px; margin:0 auto; width:100%; }
-
-  /* Sections */
-  .section { display:none; }
-  .section.active { display:block; }
-
-  /* Dashboard Section */
-  .balance-card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:24px; margin-bottom:16px; position:relative; overflow:hidden; }
-  .balance-card::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%); }
-  .balance-label { font-size:12px; color:var(--text2); margin-bottom:6px; letter-spacing:.5px; text-transform:uppercase; }
-  .balance-amount { font-family:'Space Grotesk',sans-serif; font-size:42px; font-weight:700; background:var(--grad2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:4px; }
-  .balance-sub { font-size:12px; color:var(--text3); }
-  .balance-actions { display:flex; gap:10px; margin-top:18px; }
-  .bal-btn { flex:1; padding:11px; border-radius:10px; border:none; font-size:14px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:.2s; }
-  .bal-btn.primary { background:var(--grad); color:#fff; box-shadow:0 4px 14px rgba(79,142,247,0.3); }
-  .bal-btn.secondary { background:var(--bg3); border:1px solid var(--border); color:var(--text); }
-  .bal-btn:hover { opacity:.85; transform:translateY(-1px); }
-
-  .mini-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
-  .mini-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; }
-  .mini-icon { font-size:22px; margin-bottom:8px; }
-  .mini-val { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--accent); }
-  .mini-lbl { font-size:12px; color:var(--text2); margin-top:2px; }
-
-  /* Section title */
-  .sec-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
-  .sec-title span { font-size:20px; }
-
-  /* Referral section */
-  .ref-card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:14px; }
-  .ref-code-box { background:var(--bg3); border:1px dashed var(--accent); border-radius:12px; padding:14px; text-align:center; margin-bottom:14px; }
-  .ref-code { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; letter-spacing:4px; color:var(--accent); }
-  .ref-code-lbl { font-size:11px; color:var(--text3); margin-top:4px; }
-  .ref-link-row { display:flex; gap:8px; }
-  .ref-link-input { flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:11px 12px; color:var(--text2); font-size:12px; font-family:'Inter',sans-serif; outline:none; }
-  .copy-btn { padding:11px 16px; background:var(--accent); border:none; border-radius:10px; color:#fff; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:.2s; }
-  .copy-btn:hover { background:#3a7ae8; }
-
-  .ref-invite-stat { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:14px; }
-  .ris-item { background:var(--bg3); border-radius:10px; padding:12px 8px; text-align:center; }
-  .ris-val { font-size:18px; font-weight:700; color:var(--green); font-family:'Space Grotesk',sans-serif; }
-  .ris-lbl { font-size:10px; color:var(--text3); margin-top:2px; }
-
-  .invite-list-title { font-size:13px; font-weight:600; color:var(--text2); margin-bottom:10px; }
-  .invite-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg3); border-radius:10px; margin-bottom:6px; }
-  .invite-user { font-size:13px; font-weight:500; }
-  .invite-date { font-size:11px; color:var(--text3); }
-  .invite-earn { font-size:13px; font-weight:600; color:var(--green); }
-
-  /* Withdrawal section */
-  .withdraw-card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:14px; }
-  .pay-methods { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
-  .pay-method { padding:8px 14px; border-radius:10px; border:2px solid var(--border); background:var(--bg3); cursor:pointer; font-size:13px; font-weight:500; transition:.2s; }
-  .pay-method.active { border-color:var(--accent); background:rgba(79,142,247,0.1); color:var(--accent); }
-  .w-input-grp { display:flex; flex-direction:column; gap:12px; }
-  .w-label { font-size:12px; color:var(--text2); margin-bottom:5px; font-weight:500; }
-  .w-input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-size:14px; font-family:'Inter',sans-serif; outline:none; transition:.2s; }
-  .w-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,142,247,0.12); }
-  .w-min-notice { font-size:12px; color:var(--text3); margin-top:8px; display:flex; align-items:center; gap:5px; }
-  .withdraw-history { margin-top:20px; }
-  .wh-title { font-size:13px; font-weight:600; color:var(--text2); margin-bottom:10px; }
-  .wh-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg3); border-radius:10px; margin-bottom:6px; }
-  .wh-info .wh-method { font-size:13px; font-weight:500; }
-  .wh-info .wh-date { font-size:11px; color:var(--text3); }
-  .wh-status { font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px; }
-  .wh-status.pending { background:rgba(247,201,79,0.15); color:var(--yellow); }
-  .wh-status.done { background:rgba(34,211,165,0.15); color:var(--green); }
-  .wh-status.rejected { background:rgba(247,95,95,0.15); color:var(--red); }
-  .wh-amount { font-size:14px; font-weight:700; color:var(--text); }
-
-  /* Profile Section */
-  .profile-avatar-wrap { display:flex; flex-direction:column; align-items:center; margin-bottom:20px; }
-  .profile-avatar { width:80px; height:80px; background:var(--grad); border-radius:22px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700; margin-bottom:10px; box-shadow:0 0 24px rgba(79,142,247,0.3); }
-  .profile-name { font-size:18px; font-weight:700; }
-  .profile-email { font-size:13px; color:var(--text2); margin-top:3px; }
-  .profile-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(34,211,165,0.12); border:1px solid rgba(34,211,165,0.3); border-radius:20px; padding:4px 12px; font-size:11px; color:var(--green); margin-top:8px; }
-  .profile-info-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; }
-  .profile-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
-  .profile-row:last-child { border-bottom:none; }
-  .p-key { font-size:13px; color:var(--text2); }
-  .p-val { font-size:13px; font-weight:500; }
-
-  /* Notifications popup */
-  .notif-panel { position:fixed; top:56px; right:10px; width:300px; background:var(--card2); border:1px solid var(--border); border-radius:16px; z-index:300; display:none; box-shadow:0 8px 32px rgba(0,0,0,.5); max-height:400px; overflow-y:auto; }
-  .notif-panel.open { display:block; }
-  .notif-head { padding:14px 16px; border-bottom:1px solid var(--border); font-size:14px; font-weight:600; }
-  .notif-entry { padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:.15s; }
-  .notif-entry:hover { background:rgba(255,255,255,.03); }
-  .notif-entry:last-child { border-bottom:none; }
-  .ne-title { font-size:13px; font-weight:500; }
-  .ne-body { font-size:12px; color:var(--text2); margin-top:3px; line-height:1.5; }
-  .ne-time { font-size:10px; color:var(--text3); margin-top:5px; }
-  .ne-unread { background:rgba(79,142,247,0.07); }
-
-  /* Policy / About / Help */
-  .doc-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:12px; }
-  .doc-card h3 { font-size:15px; font-weight:600; margin-bottom:10px; color:var(--accent); }
-  .doc-card p { font-size:13px; color:var(--text2); line-height:1.8; }
-  .doc-card ul { font-size:13px; color:var(--text2); line-height:2; padding-left:18px; }
-
-  .help-form { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
-  .help-form textarea { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-family:'Inter',sans-serif; font-size:14px; resize:vertical; min-height:100px; outline:none; margin-top:6px; }
-  .help-form textarea:focus { border-color:var(--accent); }
-  .help-chat-list { margin-top:16px; display:flex; flex-direction:column; gap:8px; }
-  .hc-msg { background:var(--bg3); border-radius:10px; padding:12px; }
-  .hc-msg.reply { background:rgba(79,142,247,0.1); border-left:3px solid var(--accent); }
-  .hc-from { font-size:11px; color:var(--text3); margin-bottom:4px; }
-  .hc-text { font-size:13px; }
-
-  /* ===== ADMIN PANEL ===== */
-  #admin-page { display:none; flex-direction:column; min-height:100vh; }
-  .admin-nav { background:var(--bg2); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
-  .admin-logo { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--yellow); display:flex; align-items:center; gap:8px; }
-  .admin-content { display:flex; flex:1; }
-  .admin-sidebar { width:200px; background:var(--bg2); border-right:1px solid var(--border); padding:12px 0; flex-shrink:0; min-height:calc(100vh - 54px); }
-  .admin-sidebar a { display:flex; align-items:center; gap:10px; padding:10px 16px; font-size:13px; color:var(--text2); cursor:pointer; transition:.15s; border-left:3px solid transparent; }
-  .admin-sidebar a:hover,.admin-sidebar a.active { color:var(--yellow); background:rgba(247,201,79,0.06); border-left-color:var(--yellow); }
-  .admin-main { flex:1; padding:20px; overflow-y:auto; max-height:calc(100vh - 54px); }
-
-  .admin-section { display:none; }
-  .admin-section.active { display:block; }
-
-  .admin-stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px; }
-  .a-stat { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; }
-  .a-stat-num { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; color:var(--yellow); }
-  .a-stat-lbl { font-size:12px; color:var(--text2); margin-top:4px; }
-
-  .admin-table-wrap { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
-  .admin-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .admin-table th { background:var(--bg3); padding:10px 12px; text-align:left; font-size:11px; color:var(--text3); font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
-  .admin-table td { padding:10px 12px; border-top:1px solid var(--border); color:var(--text2); }
-  .admin-table tr:hover td { background:rgba(255,255,255,.02); }
-
-  .action-btn { padding:5px 12px; border-radius:8px; border:none; font-size:12px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:.15s; }
-  .action-btn.approve { background:rgba(34,211,165,0.15); color:var(--green); }
-  .action-btn.reject { background:rgba(247,95,95,0.15); color:var(--red); }
-  .action-btn.suspend { background:rgba(247,201,79,0.15); color:var(--yellow); }
-  .action-btn.activate { background:rgba(79,142,247,0.15); color:var(--accent); }
-  .action-btn:hover { filter:brightness(1.3); }
-
-  .admin-msg-compose { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px; }
-  .admin-msg-compose textarea { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-family:'Inter',sans-serif; font-size:14px; resize:vertical; min-height:80px; outline:none; margin-bottom:10px; }
-  .admin-input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:10px 12px; color:var(--text); font-size:13px; font-family:'Inter',sans-serif; outline:none; margin-bottom:10px; }
-
-  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
-  .badge.active { background:rgba(34,211,165,0.15); color:var(--green); }
-  .badge.suspended { background:rgba(247,95,95,0.15); color:var(--red); }
-  .badge.pending { background:rgba(247,201,79,0.15); color:var(--yellow); }
-  .badge.approved { background:rgba(34,211,165,0.15); color:var(--green); }
-  .badge.rejected { background:rgba(247,95,95,0.15); color:var(--red); }
-
-  .reply-thread { margin-top:12px; }
-  .rt-msg { padding:10px 12px; border-radius:10px; margin-bottom:6px; }
-  .rt-msg.user { background:var(--bg3); }
-  .rt-msg.admin { background:rgba(247,201,79,0.08); border-left:3px solid var(--yellow); }
-  .rt-from { font-size:11px; color:var(--text3); margin-bottom:4px; }
-  .rt-text { font-size:13px; }
-
-  /* Ad placeholders */
-  .ad-placeholder { background:var(--card); border:2px dashed var(--border); border-radius:14px; padding:20px; text-align:center; margin-bottom:16px; }
-  .ad-placeholder .ad-label { font-size:11px; color:var(--text3); margin-bottom:6px; letter-spacing:1px; text-transform:uppercase; }
-  .ad-placeholder .ad-code-zone { background:var(--bg3); border-radius:8px; padding:12px; font-size:12px; color:var(--text3); font-family:monospace; }
-
-  /* Toast */
-  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px 20px; font-size:14px; z-index:9998; opacity:0; transition:.3s; pointer-events:none; max-width:300px; text-align:center; }
-  #toast.show { opacity:1; }
-  #toast.success { border-color:var(--green); color:var(--green); }
-  #toast.error { border-color:var(--red); color:var(--red); }
-
-  /* Mobile responsive */
-  @media(max-width:480px) {
-    .admin-sidebar { display:none; }
-    .admin-content { flex-direction:column; }
-    .admin-stats-grid { grid-template-columns:1fr 1fr; }
-  }
-  @media(max-width:360px) {
-    .features-strip { grid-template-columns:1fr; }
-    .stats-row .stat-pill { min-width:80px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
-  .suspended-banner { background:rgba(247,95,95,0.1); border:1px solid var(--red); border-radius:14px; padding:16px; text-align:center; color:var(--red); margin-bottom:16px; }
+  /* ======== AUTH SCREEN ======== */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0f172a 100%);
+    position: relative;
+    overflow: hidden;
+    padding: 20px;
+  }
+  #auth-screen::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    left: -20%;
+    width: 70%;
+    height: 80%;
+    background: radial-gradient(ellipse, rgba(108,99,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  #auth-screen::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    right: -10%;
+    width: 60%;
+    height: 70%;
+    background: radial-gradient(ellipse, rgba(0,212,170,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
-  /* live ticker in dashboard */
-  .dash-ticker-wrap { background:rgba(34,211,165,0.05); border:1px solid rgba(34,211,165,0.15); border-radius:12px; padding:10px 0; overflow:hidden; margin-bottom:16px; position:relative; }
-  .dash-ticker-inner { display:flex; animation:tickerScroll 35s linear infinite; gap:0; white-space:nowrap; }
-  .dt-item { padding:0 30px; font-size:12px; color:var(--green); display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .auth-logo {
+    text-align: center;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 2;
+  }
+  .auth-logo .logo-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 12px;
+    box-shadow: var(--glow);
+  }
+  .auth-logo h1 {
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--white), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .auth-logo p { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
 
-  .mobile-admin-tabs { display:flex; overflow-x:auto; gap:6px; padding:0 16px 12px; scrollbar-width:none; }
-  .mobile-admin-tabs::-webkit-scrollbar { display:none; }
-  .mat-btn { padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--bg3); font-size:12px; font-weight:500; cursor:pointer; white-space:nowrap; color:var(--text2); font-family:'Inter',sans-serif; }
-  .mat-btn.active { background:rgba(247,201,79,0.12); border-color:var(--yellow); color:var(--yellow); }
+  .stats-bar {
+    display: flex; gap: 24px; margin-bottom: 24px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 28px;
+    position: relative; z-index: 2;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .stat-item { text-align: center; }
+  .stat-item .num {
+    font-family: var(--font-head);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+  .stat-item .lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
-  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-  .section-header h2 { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; }
-  .refresh-btn { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; color:var(--text2); }
+  .auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: var(--shadow);
+    position: relative;
+    z-index: 2;
+  }
+
+  .auth-tabs {
+    display: flex;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+  .auth-tab {
+    flex: 1; text-align: center;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--muted);
+    transition: all .2s;
+  }
+  .auth-tab.active {
+    background: var(--accent);
+    color: var(--white);
+    box-shadow: 0 2px 12px rgba(108,99,255,0.4);
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .form-group input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .form-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+  }
+  .form-group input::placeholder { color: #374151; }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--white);
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .15s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+  .auth-link { text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--muted); }
+  .auth-link span { color: var(--accent); cursor: pointer; font-weight: 600; }
+  .auth-link span:hover { text-decoration: underline; }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,14,26,0.92);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 9999;
+    display: none;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 52px; height: 52px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay p { color: var(--muted); font-size: 0.9rem; }
+
+  /* ======== MAIN APP ======== */
+  #main-app { display: none; min-height: 100vh; }
+  #main-app.show { display: block; }
+
+  /* Sidebar / Nav */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    width: 260px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 500;
+    transform: translateX(-100%);
+    transition: transform .3s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .sidebar-logo span {
+    font-family: var(--font-head);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.92rem;
+    transition: all .2s;
+    margin-bottom: 4px;
+  }
+  .nav-item:hover { background: var(--bg2); color: var(--text); }
+  .nav-item.active { background: rgba(108,99,255,0.15); color: var(--accent); border-left: 3px solid var(--accent); }
+  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+    display: none;
+  }
+  .nav-badge.show { display: block; }
+
+  .sidebar-user {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .avatar {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; color: white;
+    flex-shrink: 0;
+  }
+  .sidebar-user .info { flex: 1; min-width: 0; }
+  .sidebar-user .name {
+    font-weight: 600; font-size: 0.88rem; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sidebar-user .role { font-size: 0.74rem; color: var(--accent2); }
+  .logout-btn {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 18px; padding: 4px;
+    transition: color .2s;
+  }
+  .logout-btn:hover { color: var(--red); }
+
+  /* Top bar */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 60px;
+    background: rgba(10,14,26,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 20px;
+    z-index: 400;
+    gap: 12px;
+  }
+  .hamburger {
+    background: none; border: none;
+    cursor: pointer; display: flex; flex-direction: column;
+    gap: 5px; padding: 6px;
+  }
+  .hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--text); border-radius: 2px;
+    transition: all .3s;
+  }
+  .topbar-title {
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .notif-btn {
+    position: relative; background: none; border: none;
+    cursor: pointer; font-size: 20px; color: var(--muted);
+    transition: color .2s;
+  }
+  .notif-btn:hover { color: var(--text); }
+  .notif-dot {
+    position: absolute; top: 2px; right: 2px;
+    width: 8px; height: 8px;
+    background: var(--red); border-radius: 50%;
+    border: 2px solid var(--bg);
+    display: none;
+  }
+  .notif-dot.show { display: block; }
+
+  /* Page wrapper */
+  .page-wrapper {
+    padding-top: 60px;
+    min-height: 100vh;
+  }
+  .page { display: none; padding: 24px 20px; max-width: 900px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* Overlay for sidebar */
+  .sidebar-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 499;
+    display: none;
+  }
+  .sidebar-overlay.show { display: block; }
+
+  /* ======== DASHBOARD PAGE ======== */
+  .ticker-wrap {
+    background: linear-gradient(135deg, rgba(0,212,170,0.06), rgba(108,99,255,0.06));
+    border: 1px solid rgba(0,212,170,0.2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+    padding: 0;
+    position: relative;
+  }
+  .ticker-label {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--accent2);
+    color: var(--bg);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0 12px;
+    display: flex; align-items: center;
+    z-index: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .ticker-scroll {
+    display: flex;
+    animation: ticker-anim 25s linear infinite;
+    padding: 14px 16px 14px 120px;
+    gap: 48px;
+    white-space: nowrap;
+  }
+  @keyframes ticker-anim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .ticker-item { font-size: 0.84rem; color: var(--text); font-weight: 500; }
+  .ticker-item .amount { color: var(--accent2); font-weight: 700; }
+  .ticker-item .method { color: var(--accent3); }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .stat-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-card .value {
+    font-family: var(--font-head);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .stat-card .sub { font-size: 0.78rem; color: var(--accent2); margin-top: 4px; }
+  .stat-card .icon-bg {
+    position: absolute; right: 16px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 2.4rem;
+    opacity: 0.1;
+  }
+
+  /* Notification banner */
+  #notif-banner {
+    background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,170,0.1));
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: none;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  #notif-banner.show { display: flex; }
+  #notif-banner .notif-icon { font-size: 20px; flex-shrink: 0; }
+  #notif-banner .notif-content { flex: 1; }
+  #notif-banner .notif-title { font-weight: 700; color: var(--accent); font-size: 0.9rem; margin-bottom: 4px; }
+  #notif-banner .notif-msg { font-size: 0.85rem; color: var(--text); }
+  #notif-banner .close-notif { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; flex-shrink: 0; }
+
+  /* Section header */
+  .section-hd {
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-hd::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* AD SLOTS — Monetag */
+  .ad-slot {
+    width: 100%;
+    margin: 20px 0;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .how-it-works {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .steps { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+  .step { display: flex; align-items: flex-start; gap: 14px; }
+  .step-num {
+    width: 32px; height: 32px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.85rem; color: white;
+  }
+  .step-text h4 { font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .step-text p { font-size: 0.82rem; color: var(--muted); }
+
+  /* ======== REFERRAL PAGE ======== */
+  .referral-hero {
+    background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,170,0.08));
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .referral-hero h2 {
+    font-family: var(--font-head);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .referral-hero p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .ref-code-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center;
+    max-width: 400px; margin: 0 auto;
+    overflow: hidden;
+  }
+  .ref-code-box span {
+    flex: 1; padding: 12px 16px;
+    font-family: monospace; font-size: 1rem;
+    color: var(--accent2); letter-spacing: 1px; font-weight: 600;
+  }
+  .copy-btn {
+    background: var(--accent);
+    border: none; color: white;
+    padding: 12px 18px;
+    cursor: pointer; font-weight: 600;
+    font-size: 0.85rem;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { background: #5a52e0; }
+
+  .earn-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .earn-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+  .earn-card .earn-amt {
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+  .earn-card .earn-lbl { font-size: 0.83rem; color: var(--muted); }
+
+  .referrals-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .referrals-list table { width: 100%; border-collapse: collapse; }
+  .referrals-list th {
+    background: var(--bg2);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .referrals-list td { padding: 12px 16px; font-size: 0.88rem; border-top: 1px solid var(--border); }
+  .badge-success {
+    background: rgba(16,185,129,0.15);
+    color: var(--success);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* ======== WITHDRAW PAGE ======== */
+  .withdraw-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .withdraw-card h3 {
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--white);
+  }
+  .payment-methods {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-bottom: 20px;
+  }
+  .pm-option {
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .pm-option:hover { border-color: var(--accent); color: var(--text); }
+  .pm-option.selected { border-color: var(--accent); background: rgba(108,99,255,0.1); color: var(--accent); }
+  .pm-option .pm-icon { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+
+  .withdraw-requests { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .wr-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .wr-item:last-child { border-bottom: none; }
+  .wr-amt { font-family: var(--font-head); font-weight: 700; color: var(--white); font-size: 1rem; }
+  .wr-method { font-size: 0.78rem; color: var(--muted); }
+  .wr-date { font-size: 0.75rem; color: var(--muted); }
+  .badge-pending {
+    background: rgba(245,158,11,0.15);
+    color: var(--accent3);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-done {
+    background: rgba(16,185,129,0.15);
+    color: var(--success);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* ======== HELP PAGE ======== */
+  .help-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .help-card h3 { font-family: var(--font-head); font-size: 1rem; font-weight: 700; color: var(--white); margin-bottom: 16px; }
+  .help-card textarea {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 120px;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 14px;
+  }
+  .help-card textarea:focus { border-color: var(--accent); }
+  .help-card textarea::placeholder { color: #374151; }
+  .btn-secondary {
+    background: transparent;
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 11px 24px;
+    color: var(--accent);
+    font-family: var(--font-head);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-secondary:hover { background: var(--accent); color: white; }
+
+  .my-messages { margin-top: 20px; }
+  .msg-bubble {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .msg-bubble .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
+  .msg-bubble .msg-text { font-size: 0.88rem; color: var(--text); }
+  .msg-reply {
+    background: rgba(108,99,255,0.08);
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-top: 8px;
+    font-size: 0.84rem;
+    color: var(--text);
+  }
+  .msg-reply .reply-label { font-size: 0.72rem; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+
+  /* ======== ABOUT / POLICY ======== */
+  .policy-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 16px;
+  }
+  .policy-card h3 { font-family: var(--font-head); font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+  .policy-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+  .policy-card ul { padding-left: 20px; }
+  .policy-card ul li { font-size: 0.88rem; color: var(--muted); line-height: 1.8; }
+
+  /* ======== ADMIN PANEL ======== */
+  #admin-panel { display: none; }
+  #admin-panel.show { display: block; }
+
+  .admin-header {
+    background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(108,99,255,0.1));
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .admin-badge {
+    background: var(--red);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .admin-header h2 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; color: var(--white); }
+
+  .admin-tabs-wrap {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .admin-tab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 600;
+    transition: all .2s;
+  }
+  .admin-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+  .admin-section { display: none; }
+  .admin-section.active { display: block; }
+
+  .admin-table { width: 100%; border-collapse: collapse; }
+  .admin-table th {
+    background: var(--bg2);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .admin-table td { padding: 12px 14px; font-size: 0.85rem; border-top: 1px solid var(--border); }
+  .admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .action-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    transition: all .15s;
+  }
+  .action-btn.approve { background: rgba(16,185,129,0.15); color: var(--success); }
+  .action-btn.approve:hover { background: var(--success); color: white; }
+  .action-btn.reject { background: rgba(239,68,68,0.1); color: var(--red); }
+  .action-btn.reject:hover { background: var(--red); color: white; }
+  .action-btn.view { background: rgba(108,99,255,0.1); color: var(--accent); }
+  .action-btn.view:hover { background: var(--accent); color: white; }
+  .action-btn.reply { background: rgba(0,212,170,0.1); color: var(--accent2); }
+  .action-btn.reply:hover { background: var(--accent2); color: var(--bg); }
+
+  .broadcast-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .broadcast-box h3 { font-family: var(--font-head); font-size: 0.95rem; font-weight: 700; color: var(--white); margin-bottom: 16px; }
+  .broadcast-box textarea {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color .2s;
+  }
+  .broadcast-box textarea:focus { border-color: var(--accent); }
+
+  .btn-danger {
+    background: var(--red);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 22px;
+    color: white;
+    font-family: var(--font-head);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 0.9rem;
+  }
+  .btn-danger:hover { opacity: 0.85; }
+
+  /* Admin stats */
+  .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .admin-stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+  .admin-stat-card .num {
+    font-family: var(--font-head);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .admin-stat-card .lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow);
+    position: relative;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal h3 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; color: var(--white); margin-bottom: 16px; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--bg2);
+    border: none; color: var(--muted);
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: color .2s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  /* Alert / Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: var(--shadow);
+    z-index: 2000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast .t-icon { font-size: 20px; flex-shrink: 0; }
+  .toast .t-text { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+
+  /* Utilities */
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .text-center { text-align: center; }
+  .text-muted { color: var(--muted); font-size: 0.85rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .input-row { display: flex; gap: 12px; }
+  .input-row .form-group { flex: 1; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .e-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  @media (max-width: 600px) {
+    .auth-card { padding: 28px 20px; }
+    .earn-cards { grid-template-columns: 1fr 1fr; }
+    .payment-methods { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .cards-grid { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
 
-<!-- LOADING OVERLAY -->
-<div id="loading-overlay">
-  <div class="loader-ring"></div>
-  <div class="loader-text" id="loader-text">Connecting to servers...</div>
+<!-- ======== LOADING OVERLAY ======== -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-text">Processing...</p>
 </div>
 
-<!-- TOAST -->
-<div id="toast"></div>
+<!-- ======== TOAST ======== -->
+<div class="toast" id="toast">
+  <span class="t-icon" id="toast-icon">✅</span>
+  <span class="t-text" id="toast-text">Done!</span>
+</div>
 
-<!-- ============================== LANDING PAGE ============================== -->
-<div id="landing-page">
-  <!-- Ticker -->
-  <div class="ticker-wrap">
-    <div class="ticker-track" id="main-ticker"></div>
+<!-- ======== AUTH SCREEN ======== -->
+<div id="auth-screen" style="display:none;">
+  <div class="auth-logo">
+    <div class="logo-icon">💎</div>
+    <h1>RefEarn</h1>
+    <p>Invite friends. Earn real money. Withdraw anytime.</p>
   </div>
 
-  <div class="landing-hero">
-    <div class="logo-wrap">
-      <div class="logo-icon">💎</div>
-      <div class="logo-text">EarnRef</div>
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="num" id="auth-total-users">24,831</div>
+      <div class="lbl">Total Users</div>
     </div>
-    <div class="hero-badge"><span></span> Platform is Live & Paying</div>
-    <h1 class="hero-title">Earn Real Money<br>by <em>Inviting Friends</em></h1>
-    <p class="hero-sub">Join thousands earning daily. Get $5 signup bonus + $2 for every friend you refer. Withdraw via EasyPaisa, UPI, or USDT.</p>
+    <div class="stat-item">
+      <div class="num" id="auth-active-users">6,412</div>
+      <div class="lbl">Active Today</div>
+    </div>
+    <div class="stat-item">
+      <div class="num">$2.00</div>
+      <div class="lbl">Per Referral</div>
+    </div>
+    <div class="stat-item">
+      <div class="num">$5.00</div>
+      <div class="lbl">Sign-up Bonus</div>
+    </div>
+  </div>
 
-    <div class="stats-row">
-      <div class="stat-pill">
-        <div class="stat-num" id="stat-total-users">0</div>
-        <div class="stat-lbl">Total Users</div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</div>
+      <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>Username or Email</label>
+        <input type="text" id="login-user" placeholder="Enter your username or email">
       </div>
-      <div class="stat-pill">
-        <div class="stat-num" id="stat-active-users">0</div>
-        <div class="stat-lbl">Active Today</div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="Enter your password">
       </div>
-      <div class="stat-pill">
-        <div class="stat-num">$2</div>
-        <div class="stat-lbl">Per Referral</div>
+      <button class="btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="auth-link" style="margin-top:12px;">
+        Forgot password? <span onclick="showToast('📧','Password reset link sent to your email!')">Reset it</span>
       </div>
     </div>
 
-    <!-- AUTH BOX -->
-    <div class="auth-box">
-      <div class="tab-row">
-        <button class="tab-btn active" onclick="switchTab('login')">Login</button>
-        <button class="tab-btn" onclick="switchTab('register')">Register</button>
-      </div>
-
-      <!-- LOGIN FORM -->
-      <div id="login-form" class="auth-form">
-        <div class="input-wrap">
-          <label>Username or Email</label>
-          <input class="auth-input" id="login-ident" type="text" placeholder="Enter username or email">
-        </div>
-        <div class="input-wrap">
-          <label>Password</label>
-          <input class="auth-input" id="login-pass" type="password" placeholder="Enter password">
-        </div>
-        <button class="btn-primary" onclick="doLogin()">Login to Account</button>
-      </div>
-
-      <!-- REGISTER FORM -->
-      <div id="register-form" class="auth-form" style="display:none">
-        <div class="input-wrap">
+    <!-- REGISTER FORM -->
+    <div id="register-form" style="display:none;">
+      <div class="input-row">
+        <div class="form-group">
           <label>Full Name</label>
-          <input class="auth-input" id="reg-fullname" type="text" placeholder="Your full name">
+          <input type="text" id="reg-name" placeholder="John Doe">
         </div>
-        <div class="input-wrap">
+        <div class="form-group">
           <label>Username</label>
-          <input class="auth-input" id="reg-username" type="text" placeholder="Choose a username">
+          <input type="text" id="reg-username" placeholder="johndoe">
         </div>
-        <div class="input-wrap">
-          <label>Email Address</label>
-          <input class="auth-input" id="reg-email" type="email" placeholder="your@email.com">
-        </div>
-        <div class="input-wrap">
-          <label>Password</label>
-          <input class="auth-input" id="reg-pass" type="password" placeholder="Create password">
-        </div>
-        <div class="input-wrap">
-          <label>Confirm Password</label>
-          <input class="auth-input" id="reg-pass2" type="password" placeholder="Repeat password">
-        </div>
-        <div class="input-wrap">
-          <label>Invite Code <span style="color:var(--text3)">(Optional)</span></label>
-          <input class="auth-input" id="reg-invite" type="text" placeholder="Enter invite code if you have one">
-        </div>
-        <button class="btn-primary" onclick="doRegister()">Create Account & Get $5</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Features -->
-  <div class="features-strip">
-    <div class="feat-card">
-      <div class="feat-icon">🎁</div>
-      <div class="feat-title">$5 Signup Bonus</div>
-      <div class="feat-desc">Instant credit on registration</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">👥</div>
-      <div class="feat-title">$2 Per Referral</div>
-      <div class="feat-desc">Unlimited earning potential</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon">💸</div>
-      <div class="feat-title">Fast Payout</div>
-      <div class="feat-desc">EasyPaisa, UPI & USDT</div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="john@example.com">
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-pass" placeholder="Min. 6 characters">
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" id="reg-pass2" placeholder="Repeat password">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Referral Code <span style="color:var(--accent2);font-size:0.75rem;text-transform:none;letter-spacing:0;">(Optional)</span></label>
+        <input type="text" id="reg-ref" placeholder="Enter referral code (optional)">
+      </div>
+      <button class="btn-primary" onclick="doRegister()">Create Account & Earn $5</button>
+      <div class="auth-link">Already have an account? <span onclick="switchTab('login')">Sign in</span></div>
     </div>
   </div>
 </div>
 
-<!-- ============================== DASHBOARD PAGE ============================== -->
-<div id="dashboard-page">
-  <!-- Top Nav -->
-  <div class="top-nav">
-    <div class="nav-left">
-      <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
-        <div class="ham-line"></div><div class="ham-line"></div><div class="ham-line"></div>
-      </div>
-      <div class="nav-logo">EarnRef</div>
+<!-- ======== MAIN APP ======== -->
+<div id="main-app">
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="icon">💎</div>
+      <span>RefEarn</span>
     </div>
-    <div class="nav-right">
-      <div class="nav-balance">Balance: <strong id="nav-balance-val">$0.00</strong></div>
-      <div class="notif-btn" onclick="toggleNotif()">
-        🔔<div class="notif-dot" id="notif-dot"></div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="icon">🏠</span> Dashboard
       </div>
+      <div class="nav-item" onclick="showPage('referral')">
+        <span class="icon">🔗</span> Referral
+      </div>
+      <div class="nav-item" onclick="showPage('withdraw')">
+        <span class="icon">💸</span> Withdrawal
+      </div>
+      <div class="nav-item" onclick="showPage('policy')">
+        <span class="icon">📜</span> Policy
+      </div>
+      <div class="nav-item" onclick="showPage('about')">
+        <span class="icon">ℹ️</span> About
+      </div>
+      <div class="nav-item" onclick="showPage('help')">
+        <span class="icon">💬</span> Help & Support
+        <span class="nav-badge" id="help-badge">!</span>
+      </div>
+      <!-- Admin only -->
+      <div class="nav-item" id="admin-nav-item" style="display:none;" onclick="showPage('admin')">
+        <span class="icon">🔐</span> Admin Panel
+        <span class="nav-badge show" id="admin-badge">3</span>
+      </div>
+      <!-- Logout -->
+      <div class="nav-item" onclick="doLogout()" style="margin-top:8px;border-top:1px solid var(--border);padding-top:12px;color:var(--red);">
+        <span class="icon">🚪</span> Logout
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebar-avatar">U</div>
+      <div class="info">
+        <div class="name" id="sidebar-username">Username</div>
+        <div class="role" id="sidebar-role">Member</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" title="Logout">⏻</button>
+    </div>
+  </nav>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="showPage('help')">
+        🔔<span class="notif-dot" id="notif-dot"></span>
+      </button>
+      <div class="avatar" id="topbar-avatar" style="width:32px;height:32px;font-size:0.8rem;cursor:pointer;" onclick="toggleSidebar()">U</div>
     </div>
   </div>
 
-  <!-- Notification Panel -->
-  <div class="notif-panel" id="notif-panel">
-    <div class="notif-head">Notifications</div>
-    <div id="notif-list"></div>
-  </div>
+  <div class="page-wrapper">
 
-  <!-- Side Drawer -->
-  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-  <div class="side-drawer" id="side-drawer">
-    <div class="drawer-head">
-      <div class="drawer-user">
-        <div class="drawer-avatar" id="drawer-avatar">?</div>
-        <div>
-          <div class="drawer-name" id="drawer-name">Loading...</div>
-          <div class="drawer-email" id="drawer-email">...</div>
+    <!-- ====== DASHBOARD PAGE ====== -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Notification Banner -->
+      <div id="notif-banner">
+        <span class="notif-icon">📢</span>
+        <div class="notif-content">
+          <div class="notif-title" id="notif-title">Admin Broadcast</div>
+          <div class="notif-msg" id="notif-msg">Welcome to RefEarn! Invite friends and earn money today.</div>
         </div>
-      </div>
-    </div>
-    <nav class="drawer-nav">
-      <div class="drawer-item active" onclick="showSection('dashboard');closeDrawer()"><span class="d-icon">🏠</span>Dashboard</div>
-      <div class="drawer-item" onclick="showSection('profile');closeDrawer()"><span class="d-icon">👤</span>Profile</div>
-      <div class="drawer-item" onclick="showSection('referral');closeDrawer()"><span class="d-icon">🔗</span>Referral</div>
-      <div class="drawer-item" onclick="showSection('withdrawal');closeDrawer()"><span class="d-icon">💸</span>Withdrawal</div>
-      <div class="drawer-item" onclick="showSection('policy');closeDrawer()"><span class="d-icon">📋</span>Policy</div>
-      <div class="drawer-item" onclick="showSection('about');closeDrawer()"><span class="d-icon">ℹ️</span>About</div>
-      <div class="drawer-item" onclick="showSection('help');closeDrawer()"><span class="d-icon">💬</span>Help & Support</div>
-      <div class="drawer-item admin-link" id="admin-menu-btn" style="display:none" onclick="showAdminPage()"><span class="d-icon">🛡️</span>Admin Panel</div>
-      <div class="drawer-item danger" onclick="doLogout()"><span class="d-icon">🚪</span>Logout</div>
-    </nav>
-  </div>
-
-  <!-- Main Content -->
-  <div class="main-content">
-
-    <!-- AD ZONE 1 -->
-    <div class="ad-placeholder">
-      <div class="ad-label">Advertisement</div>
-      <div class="ad-code-zone" id="ad-zone-1">
-        <!-- PASTE MONETAG AD CODE HERE (Zone 1) -->
-        <!-- Replace this comment with your Monetag ad script -->
-      </div>
-    </div>
-
-    <!-- DASHBOARD SECTION -->
-    <div class="section active" id="sec-dashboard">
-      <div id="suspended-banner" class="suspended-banner" style="display:none">
-        ⛔ Your account has been suspended. Contact support for assistance.
+        <button class="close-notif" onclick="closeNotif()">✕</button>
       </div>
 
-      <!-- Live withdrawal ticker -->
-      <div class="dash-ticker-wrap">
-        <div class="dash-ticker-inner" id="dash-ticker"></div>
-      </div>
-
-      <div class="balance-card">
-        <div class="balance-label">Total Balance</div>
-        <div class="balance-amount" id="dash-balance">$0.00</div>
-        <div class="balance-sub">Updated in real-time</div>
-        <div class="balance-actions">
-          <button class="bal-btn primary" onclick="showSection('withdrawal')">Withdraw</button>
-          <button class="bal-btn secondary" onclick="showSection('referral')">Invite Friends</button>
+      <!-- Benefit Withdrawal Ticker -->
+      <div class="ticker-wrap">
+        <div class="ticker-label">🔴 Live Withdrawals</div>
+        <div class="ticker-scroll" id="ticker-scroll">
+          <!-- JS fills this -->
         </div>
       </div>
 
-      <div class="mini-stats">
-        <div class="mini-card">
-          <div class="mini-icon">👥</div>
-          <div class="mini-val" id="dash-referrals">0</div>
-          <div class="mini-lbl">Total Referrals</div>
+      <!-- Stats Cards -->
+      <div class="cards-grid">
+        <div class="stat-card">
+          <div class="label">Total Balance</div>
+          <div class="value" id="dash-balance">$0.00</div>
+          <div class="sub">+$5 sign-up bonus</div>
+          <div class="icon-bg">💰</div>
         </div>
-        <div class="mini-card">
-          <div class="mini-icon">💰</div>
-          <div class="mini-val" id="dash-earned">$0.00</div>
-          <div class="mini-lbl">Total Earned</div>
+        <div class="stat-card">
+          <div class="label">Referrals</div>
+          <div class="value" id="dash-referrals">0</div>
+          <div class="sub">$2.00 each</div>
+          <div class="icon-bg">👥</div>
         </div>
-        <div class="mini-card">
-          <div class="mini-icon">✅</div>
-          <div class="mini-val" id="dash-withdrawn">$0.00</div>
-          <div class="mini-lbl">Withdrawn</div>
+        <div class="stat-card">
+          <div class="label">Withdrawn</div>
+          <div class="value" id="dash-withdrawn">$0.00</div>
+          <div class="sub">Total paid out</div>
+          <div class="icon-bg">✅</div>
         </div>
-        <div class="mini-card">
-          <div class="mini-icon">⏳</div>
-          <div class="mini-val" id="dash-pending">$0.00</div>
-          <div class="mini-lbl">Pending</div>
-        </div>
-      </div>
-
-      <!-- AD ZONE 2 -->
-      <div class="ad-placeholder">
-        <div class="ad-label">Advertisement</div>
-        <div class="ad-code-zone" id="ad-zone-2">
-          <!-- PASTE MONETAG AD CODE HERE (Zone 2) -->
+        <div class="stat-card">
+          <div class="label">My Rank</div>
+          <div class="value">#<span id="dash-rank">—</span></div>
+          <div class="sub">Global leaderboard</div>
+          <div class="icon-bg">🏆</div>
         </div>
       </div>
 
-      <!-- AD ZONE 3 -->
-      <div class="ad-placeholder">
-        <div class="ad-label">Sponsored</div>
-        <div class="ad-code-zone" id="ad-zone-3">
-          <!-- PASTE MONETAG AD CODE HERE (Zone 3) -->
+      <!-- AD SLOT 1: Monetag In-Page Push (Banner) — Dashboard -->
+      <div class="ad-slot ad-monetag-push" id="ad-monetag-push">
+        <script>(function(s){s.dataset.zone='11138039',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+      </div>
+
+      <!-- How It Works -->
+      <div class="how-it-works">
+        <div class="section-hd">🚀 How It Works</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              <h4>Create Your Account</h4>
+              <p>Register and instantly receive your $5 welcome bonus.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              <h4>Share Your Referral Code</h4>
+              <p>Share your unique code with friends, family, and social media followers.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">
+              <h4>Earn $2 Per Friend</h4>
+              <p>Every time someone signs up using your code, $2 is credited to your wallet instantly.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">
+              <h4>Withdraw Anytime</h4>
+              <p>Request your payout via EasyPaisa, UPI, or USDT (BEP20). No hidden fees.</p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- AD SLOT 2: Monetag Vignette Banner — Dashboard -->
+      <div class="ad-slot ad-monetag-vignette" id="ad-monetag-vignette">
+        <script>(function(s){s.dataset.zone='11138090',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
       </div>
     </div>
 
-    <!-- PROFILE SECTION -->
-    <div class="section" id="sec-profile">
-      <div class="sec-title"><span>👤</span> My Profile</div>
-      <div class="profile-avatar-wrap">
-        <div class="profile-avatar" id="profile-avatar-letter">?</div>
-        <div class="profile-name" id="profile-fullname">---</div>
-        <div class="profile-email" id="profile-email-show">---</div>
-        <div class="profile-badge">✅ Verified Member</div>
+    <!-- ====== REFERRAL PAGE ====== -->
+    <div class="page" id="page-referral">
+      <div class="referral-hero">
+        <h2>🔗 Your Referral Program</h2>
+        <p>Share your unique link and earn $2.00 for every friend who signs up.</p>
+        <div class="earn-cards">
+          <div class="earn-card">
+            <div class="earn-amt">$5</div>
+            <div class="earn-lbl">Sign-up Bonus</div>
+          </div>
+          <div class="earn-card">
+            <div class="earn-amt">$2</div>
+            <div class="earn-lbl">Per Referral</div>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">Your Referral Code</div>
+          <div class="ref-code-box">
+            <span id="ref-code-display">—</span>
+            <button class="copy-btn" onclick="copyRefCode()">📋 Copy</button>
+          </div>
+          <div style="margin-top:12px;font-size:0.8rem;color:var(--muted);">Referral Link</div>
+          <div class="ref-code-box" style="margin-top:6px;">
+            <span id="ref-link-display" style="font-size:0.78rem;color:var(--muted);">—</span>
+            <button class="copy-btn" onclick="copyRefLink()">📋 Copy</button>
+          </div>
+        </div>
       </div>
-      <div class="profile-info-card">
-        <div class="profile-row"><span class="p-key">Username</span><span class="p-val" id="profile-username">---</span></div>
-        <div class="profile-row"><span class="p-key">Member Since</span><span class="p-val" id="profile-joined">---</span></div>
-        <div class="profile-row"><span class="p-key">Referral Code</span><span class="p-val" id="profile-refcode" style="color:var(--accent);font-weight:700">---</span></div>
-        <div class="profile-row"><span class="p-key">Total Balance</span><span class="p-val" id="profile-balance" style="color:var(--green)">$0.00</span></div>
-        <div class="profile-row"><span class="p-key">Total Referrals</span><span class="p-val" id="profile-refs">0</span></div>
-        <div class="profile-row"><span class="p-key">Account Status</span><span class="p-val" id="profile-status">Active</span></div>
+
+      <div class="section-hd mt-24">👥 Your Referrals</div>
+      <div class="referrals-list">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>User</th>
+              <th>Date</th>
+              <th>Earned</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="referral-table-body">
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <div class="e-icon">🔗</div>
+                  <p>No referrals yet. Share your code to start earning!</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- REFERRAL SECTION -->
-    <div class="section" id="sec-referral">
-      <div class="sec-title"><span>🔗</span> Referral Program</div>
-      <div class="ref-card">
-        <div class="ref-code-box">
-          <div class="ref-code" id="ref-code-display">------</div>
-          <div class="ref-code-lbl">Your Unique Referral Code</div>
-        </div>
-        <div class="ref-link-row">
-          <input class="ref-link-input" id="ref-link-input" readonly value="">
-          <button class="copy-btn" onclick="copyRefLink()">Copy Link</button>
-        </div>
-        <div class="ref-invite-stat">
-          <div class="ris-item"><div class="ris-val" id="ris-total">0</div><div class="ris-lbl">Total Invited</div></div>
-          <div class="ris-item"><div class="ris-val" id="ris-earned">$0</div><div class="ris-lbl">Earned</div></div>
-          <div class="ris-item"><div class="ris-val">$2</div><div class="ris-lbl">Per Invite</div></div>
-        </div>
-      </div>
-      <div class="ref-card">
-        <div class="invite-list-title">👥 People You Invited</div>
-        <div id="invite-list-container">
-          <p style="font-size:13px;color:var(--text3);text-align:center;padding:20px">No referrals yet. Share your code!</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- WITHDRAWAL SECTION -->
-    <div class="section" id="sec-withdrawal">
-      <div class="sec-title"><span>💸</span> Withdraw Funds</div>
+    <!-- ====== WITHDRAW PAGE ====== -->
+    <div class="page" id="page-withdraw">
       <div class="withdraw-card">
-        <div class="w-label">Payment Method</div>
-        <div class="pay-methods">
-          <div class="pay-method active" onclick="selectPayMethod('easypaisa', this)">EasyPaisa</div>
-          <div class="pay-method" onclick="selectPayMethod('upi', this)">UPI</div>
-          <div class="pay-method" onclick="selectPayMethod('usdt', this)">USDT (BEP20)</div>
+        <h3>💸 Request Withdrawal</h3>
+        <div style="background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;font-size:0.85rem;color:var(--accent2);">
+          💡 <strong>Current Balance:</strong> <span id="withdraw-balance">$0.00</span>
         </div>
-        <div class="w-input-grp">
-          <div>
-            <div class="w-label" id="w-account-label">EasyPaisa Number</div>
-            <input class="w-input" id="w-account" placeholder="+92 3XX XXXXXXX">
+
+        <div class="section-hd">Select Payment Method</div>
+        <div class="payment-methods">
+          <div class="pm-option" id="pm-easypaisa" onclick="selectPM('easypaisa')">
+            <span class="pm-icon">📱</span>
+            EasyPaisa
           </div>
-          <div>
-            <div class="w-label">Amount (USD)</div>
-            <input class="w-input" id="w-amount" type="number" placeholder="Enter amount" min="1">
+          <div class="pm-option" id="pm-upi" onclick="selectPM('upi')">
+            <span class="pm-icon">💳</span>
+            UPI
+          </div>
+          <div class="pm-option" id="pm-usdt" onclick="selectPM('usdt')">
+            <span class="pm-icon">🪙</span>
+            USDT BEP20
           </div>
         </div>
-        <div class="w-min-notice">ℹ️ Minimum withdrawal: $50</div>
-        <button class="btn-primary" style="margin-top:16px" onclick="submitWithdrawal()">Submit Withdrawal Request</button>
+
+        <div id="pm-fields" style="display:none;">
+          <div class="form-group">
+            <label id="pm-field-label">Account Details</label>
+            <input type="text" id="pm-account" placeholder="Enter account / address">
+          </div>
+          <div class="form-group">
+            <label>Amount (USD)</label>
+            <input type="number" id="pm-amount" placeholder="Enter amount" min="1" step="0.01">
+          </div>
+          <button class="btn-primary" onclick="submitWithdraw()">Submit Withdrawal Request</button>
+        </div>
       </div>
 
-      <!-- AD ZONE 4 -->
-      <div class="ad-placeholder">
-        <div class="ad-label">Advertisement</div>
-        <div class="ad-code-zone" id="ad-zone-4">
-          <!-- PASTE MONETAG AD CODE HERE (Zone 4) -->
-        </div>
-      </div>
-
-      <div class="withdraw-history">
-        <div class="wh-title">Withdrawal History</div>
-        <div id="withdrawal-history-list">
-          <p style="font-size:13px;color:var(--text3);text-align:center;padding:20px">No withdrawal requests yet.</p>
+      <div class="section-hd mt-24">📋 Withdrawal History</div>
+      <div class="withdraw-requests">
+        <div id="withdraw-history">
+          <div class="empty-state">
+            <div class="e-icon">📋</div>
+            <p>No withdrawal requests yet.</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- POLICY SECTION -->
-    <div class="section" id="sec-policy">
-      <div class="sec-title"><span>📋</span> Terms & Policy</div>
-      <div class="doc-card">
+    <!-- ====== POLICY PAGE ====== -->
+    <div class="page" id="page-policy">
+      <div class="section-hd">📜 Terms & Policy</div>
+      <div class="policy-card">
         <h3>Referral Program Rules</h3>
         <ul>
-          <li>$5 signup bonus credited instantly on registration.</li>
-          <li>$2 credited per successful referral when your friend registers.</li>
-          <li>Minimum withdrawal amount is $50.</li>
-          <li>Multiple accounts from the same device are prohibited.</li>
-          <li>Fraudulent referrals will result in account suspension.</li>
-          <li>Withdrawals are processed within 24–72 hours.</li>
+          <li>Each new user receives a $5 bonus upon successful registration.</li>
+          <li>Referrers earn $2.00 for every valid referral that completes registration.</li>
+          <li>Self-referrals or fraudulent accounts will be permanently banned.</li>
+          <li>Multiple accounts per person are strictly prohibited.</li>
+          <li>RefEarn reserves the right to reverse fraudulent earnings.</li>
         </ul>
       </div>
-      <div class="doc-card">
-        <h3>Privacy Policy</h3>
-        <p>We collect minimal data necessary to operate the platform. Your information is never sold to third parties. Payments are processed securely via verified payment channels.</p>
-      </div>
-      <div class="doc-card">
-        <h3>Anti-Fraud Policy</h3>
-        <p>Any attempt to exploit the referral system using fake accounts, bots, or device emulators will result in immediate permanent suspension of all associated accounts.</p>
-      </div>
-    </div>
-
-    <!-- ABOUT SECTION -->
-    <div class="section" id="sec-about">
-      <div class="sec-title"><span>ℹ️</span> About EarnRef</div>
-      <div class="doc-card">
-        <h3>What is EarnRef?</h3>
-        <p>EarnRef is a trusted referral rewards platform where you earn real money by inviting friends. We pay via EasyPaisa, UPI, and USDT — making it accessible to everyone.</p>
-      </div>
-      <div class="doc-card">
-        <h3>How It Works</h3>
+      <div class="policy-card">
+        <h3>Withdrawal Policy</h3>
+        <p>Users may request a withdrawal once their account balance reaches the minimum threshold. Withdrawals are reviewed and processed within 24–72 business hours.</p>
         <ul>
-          <li>1. Register and get your $5 bonus instantly.</li>
-          <li>2. Share your unique referral code with friends.</li>
-          <li>3. Earn $2 for every friend who signs up.</li>
-          <li>4. Withdraw once your balance reaches $50.</li>
+          <li>Supported methods: EasyPaisa, UPI, and USDT (BEP20 Network).</li>
+          <li>Processing time: 24–72 hours after admin approval.</li>
+          <li>RefEarn may request identity verification before processing large withdrawals.</li>
         </ul>
       </div>
+      <div class="policy-card">
+        <h3>Privacy Policy</h3>
+        <p>We collect only the minimum information required to operate the platform (name, email, payment details). Your data is never sold to third parties. All payment information is encrypted and stored securely.</p>
+      </div>
+    </div>
 
-      <!-- AD ZONE 5 -->
-      <div class="ad-placeholder">
-        <div class="ad-label">Advertisement</div>
-        <div class="ad-code-zone" id="ad-zone-5">
-          <!-- PASTE MONETAG AD CODE HERE (Zone 5) -->
+    <!-- ====== ABOUT PAGE ====== -->
+    <div class="page" id="page-about">
+      <div class="section-hd">ℹ️ About RefEarn</div>
+      <div class="policy-card">
+        <h3>What is RefEarn?</h3>
+        <p>RefEarn is a referral-based earning platform that allows anyone to generate income by simply sharing their unique invite code with friends, family, and social networks.</p>
+        <p>We believe everyone deserves access to fair, transparent, and easy-to-understand earning opportunities. No complicated tasks. No hidden catches. Just share, invite, and earn.</p>
+      </div>
+      <div class="policy-card">
+        <h3>Our Mission</h3>
+        <p>To build the most trusted and transparent referral earning platform, empowering users worldwide to generate real, withdrawable income through the power of community sharing.</p>
+      </div>
+      <div class="policy-card">
+        <h3>Contact & Support</h3>
+        <p>For any queries or issues, use the <strong>Help & Support</strong> section to send us a message directly. Our team typically responds within 24 hours.</p>
+      </div>
+
+    </div>
+
+    <!-- ====== HELP PAGE ====== -->
+    <div class="page" id="page-help">
+      <div class="help-card">
+        <h3>💬 Contact Support</h3>
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="help-subject" placeholder="Brief topic of your message">
+        </div>
+        <textarea id="help-message" placeholder="Describe your issue or question in detail..."></textarea>
+        <button class="btn-secondary" onclick="sendHelpMessage()">📤 Send Message</button>
+      </div>
+
+      <div class="section-hd mt-24">📩 My Messages</div>
+      <div id="help-messages-list">
+        <div class="empty-state">
+          <div class="e-icon">💬</div>
+          <p>No messages yet. Send one above!</p>
         </div>
       </div>
     </div>
 
-    <!-- HELP SECTION -->
-    <div class="section" id="sec-help">
-      <div class="sec-title"><span>💬</span> Help & Support</div>
-      <div class="help-form">
-        <div class="w-label">Send a Message to Support</div>
-        <input class="w-input" id="help-subject" placeholder="Subject" style="margin-bottom:10px;margin-top:8px">
-        <textarea id="help-msg" placeholder="Describe your issue..."></textarea>
-        <button class="btn-primary" style="margin-top:10px" onclick="sendHelpMessage()">Send Message</button>
+    <!-- ====== ADMIN PANEL ====== -->
+    <div class="page" id="page-admin">
+      <div id="admin-panel">
+        <div class="admin-header">
+          <span class="admin-badge">🔐 Admin</span>
+          <div>
+            <h2>Admin Control Panel</h2>
+            <p style="font-size:0.8rem;color:var(--muted);margin-top:2px;">Full platform management dashboard</p>
+          </div>
+        </div>
 
-        <div class="help-chat-list" id="help-chat-list"></div>
+        <div class="admin-stats">
+          <div class="admin-stat-card">
+            <div class="num" id="a-total-users">0</div>
+            <div class="lbl">Total Users</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="num" id="a-pending-wd">0</div>
+            <div class="lbl">Pending Withdrawals</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="num" id="a-total-paid">$0</div>
+            <div class="lbl">Total Paid Out</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="num" id="a-messages">0</div>
+            <div class="lbl">Support Tickets</div>
+          </div>
+        </div>
+
+        <div class="admin-tabs-wrap">
+          <div class="admin-tab active" onclick="switchAdminTab('users')">👥 Users</div>
+          <div class="admin-tab" onclick="switchAdminTab('withdrawals')">💸 Withdrawals</div>
+          <div class="admin-tab" onclick="switchAdminTab('messages')">💬 Messages</div>
+          <div class="admin-tab" onclick="switchAdminTab('broadcast')">📢 Broadcast</div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="admin-section active" id="admin-tab-users">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Balance</th>
+                  <th>Referrals</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Withdrawals Tab -->
+        <div class="admin-section" id="admin-tab-withdrawals">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Account</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-wd-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Messages Tab -->
+        <div class="admin-section" id="admin-tab-messages">
+          <div id="admin-messages-list"></div>
+        </div>
+
+        <!-- Broadcast Tab -->
+        <div class="admin-section" id="admin-tab-broadcast">
+          <div class="broadcast-box">
+            <h3>📢 Broadcast Message to All Users</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">This message will appear as a notification banner for all logged-in users.</p>
+            <div class="form-group">
+              <label>Notification Title</label>
+              <input type="text" id="bc-title" placeholder="e.g. Special Announcement">
+            </div>
+            <textarea id="bc-message" placeholder="Type your message to all users here..."></textarea>
+            <button class="btn-danger" onclick="broadcastMessage()">📢 Send to All Users</button>
+          </div>
+        </div>
       </div>
     </div>
 
-  </div><!-- end main-content -->
-</div><!-- end dashboard-page -->
+  </div><!-- end page-wrapper -->
+</div><!-- end main-app -->
 
-<!-- ============================== ADMIN PANEL ============================== -->
-<div id="admin-page">
-  <div class="admin-nav">
-    <div class="admin-logo">🛡️ Admin Panel</div>
-    <div style="display:flex;gap:8px">
-      <button class="action-btn activate" onclick="showDashboard()">← Back to Dashboard</button>
-      <button class="action-btn reject" onclick="doLogout()">Logout</button>
+<!-- Withdraw Confirm Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modal-title">Confirm Withdrawal</h3>
+    <div id="modal-body"></div>
+    <div style="display:flex;gap:12px;margin-top:20px;">
+      <button class="btn-secondary" onclick="closeModal()" style="flex:1;">Cancel</button>
+      <button class="btn-primary" id="modal-confirm-btn" style="flex:1;">Confirm</button>
     </div>
   </div>
+</div>
 
-  <!-- Mobile tabs -->
-  <div class="mobile-admin-tabs">
-    <button class="mat-btn active" onclick="showAdminSection('overview')">Overview</button>
-    <button class="mat-btn" onclick="showAdminSection('users')">Users</button>
-    <button class="mat-btn" onclick="showAdminSection('withdrawals')">Withdrawals</button>
-    <button class="mat-btn" onclick="showAdminSection('messages')">Messages</button>
-    <button class="mat-btn" onclick="showAdminSection('broadcast')">Broadcast</button>
-    <button class="mat-btn" onclick="showAdminSection('settings')">Settings</button>
-  </div>
-
-  <div class="admin-content">
-    <div class="admin-sidebar">
-      <a class="active" onclick="showAdminSection('overview')">📊 Overview</a>
-      <a onclick="showAdminSection('users')">👥 Users</a>
-      <a onclick="showAdminSection('withdrawals')">💸 Withdrawals</a>
-      <a onclick="showAdminSection('messages')">💬 Messages</a>
-      <a onclick="showAdminSection('broadcast')">📣 Broadcast</a>
-      <a onclick="showAdminSection('settings')">⚙️ Settings</a>
-    </div>
-
-    <div class="admin-main">
-
-      <!-- OVERVIEW -->
-      <div class="admin-section active" id="admin-sec-overview">
-        <div class="section-header">
-          <h2>📊 Platform Overview</h2>
-          <button class="refresh-btn" onclick="loadAdminStats()">↻ Refresh</button>
-        </div>
-        <div class="admin-stats-grid">
-          <div class="a-stat"><div class="a-stat-num" id="a-total-users">0</div><div class="a-stat-lbl">Total Users</div></div>
-          <div class="a-stat"><div class="a-stat-num" id="a-active-users">0</div><div class="a-stat-lbl">Active Users</div></div>
-          <div class="a-stat"><div class="a-stat-num" id="a-pending-wd">0</div><div class="a-stat-lbl">Pending Withdrawals</div></div>
-          <div class="a-stat"><div class="a-stat-num" id="a-total-paid">$0</div><div class="a-stat-lbl">Total Paid Out</div></div>
-          <div class="a-stat"><div class="a-stat-num" id="a-total-bonus">$0</div><div class="a-stat-lbl">Bonuses Given</div></div>
-          <div class="a-stat"><div class="a-stat-num" id="a-suspended">0</div><div class="a-stat-lbl">Suspended Accounts</div></div>
-        </div>
-      </div>
-
-      <!-- USERS -->
-      <div class="admin-section" id="admin-sec-users">
-        <div class="section-header">
-          <h2>👥 User Management</h2>
-          <button class="refresh-btn" onclick="loadAdminUsers()">↻ Refresh</button>
-        </div>
-        <input class="admin-input" id="user-search" placeholder="Search by username or email..." oninput="filterAdminUsers()">
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead><tr><th>User</th><th>Balance</th><th>Refs</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="admin-users-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- WITHDRAWALS -->
-      <div class="admin-section" id="admin-sec-withdrawals">
-        <div class="section-header">
-          <h2>💸 Withdrawal Requests</h2>
-          <button class="refresh-btn" onclick="loadAdminWithdrawals()">↻ Refresh</button>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead><tr><th>User</th><th>Method</th><th>Account</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="admin-wd-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- MESSAGES -->
-      <div class="admin-section" id="admin-sec-messages">
-        <div class="section-header">
-          <h2>💬 Support Messages</h2>
-          <button class="refresh-btn" onclick="loadAdminMessages()">↻ Refresh</button>
-        </div>
-        <div id="admin-messages-list"></div>
-      </div>
-
-      <!-- BROADCAST -->
-      <div class="admin-section" id="admin-sec-broadcast">
-        <div class="section-header"><h2>📣 Broadcast Message</h2></div>
-        <div class="admin-msg-compose">
-          <div class="w-label" style="margin-bottom:8px">Message Title</div>
-          <input class="admin-input" id="bc-title" placeholder="Notification title">
-          <div class="w-label" style="margin-bottom:8px">Message Body</div>
-          <textarea id="bc-body" placeholder="Write your message to all users..."></textarea>
-          <button class="btn-primary" onclick="broadcastMessage()">📣 Send to All Users</button>
-        </div>
-      </div>
-
-      <!-- SETTINGS -->
-      <div class="admin-section" id="admin-sec-settings">
-        <div class="section-header"><h2>⚙️ Platform Settings</h2></div>
-        <div class="admin-msg-compose">
-          <div class="w-label" style="margin-bottom:8px">Signup Bonus ($)</div>
-          <input class="admin-input" id="set-signup-bonus" type="number" value="5" min="0">
-          <div class="w-label" style="margin-bottom:8px">Referral Bonus ($)</div>
-          <input class="admin-input" id="set-ref-bonus" type="number" value="2" min="0">
-          <div class="w-label" style="margin-bottom:8px">Min Withdrawal ($)</div>
-          <input class="admin-input" id="set-min-wd" type="number" value="50" min="1">
-          <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
-        </div>
-      </div>
-
+<!-- Reply Modal -->
+<div class="modal-overlay" id="reply-modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeReplyModal()">✕</button>
+    <h3>Reply to Support Ticket</h3>
+    <div id="reply-modal-body"></div>
+    <textarea id="reply-text" placeholder="Type your reply..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;resize:vertical;min-height:100px;outline:none;margin-top:16px;"></textarea>
+    <div style="display:flex;gap:12px;margin-top:14px;">
+      <button class="btn-secondary" onclick="closeReplyModal()" style="flex:1;">Cancel</button>
+      <button class="btn-primary" onclick="sendReply()" style="flex:1;">Send Reply</button>
     </div>
   </div>
 </div>
 
 <script>
-// ============================= CONFIG =============================
-// TODO: Replace with your actual Supabase project credentials
-const SUPABASE_URL = 'https://czvxpyvpqjdhbegiotjr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6dnhweXZwcWpkaGJlZ2lvdGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjQ2ODcsImV4cCI6MjA5Njg0MDY4N30.khC3HoKM_QuWjpeXZD6LRMpfkvk6UA5xe4yXHMS9JhI';
-const ADMIN_USERNAME = 'admin';  // Change this to your admin username
-const ADMIN_EMAIL = 'admin@earnref.com'; // Change to your admin email
+// ============================================================
+// SUPABASE CONFIG — used ONLY for referral system
+// ============================================================
+const SUPA_URL = 'https://czvxpyvpqjdhbegiotjr.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6dnhweXZwcWpkaGJlZ2lvdGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjQ2ODcsImV4cCI6MjA5Njg0MDY4N30.khC3HoKM_QuWjpeXZDb6LRMpfkvk6UA5xe4yXHMS9JhI';
 
-let supabaseClient = null;
+// Generic Supabase REST helper
+async function supaFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPA_URL + '/rest/v1/' + path, opts);
+  if (!res.ok) return null;
+  try { return await res.json(); } catch { return null; }
+}
+
+// ---- Referral table helpers ----
+// Table: referrals (ref_code TEXT, referrer_id TEXT, new_user TEXT, earned NUMERIC, date TEXT)
+
+async function supaGetReferrerByCode(refCode) {
+  const rows = await supaFetch(`referrals?ref_code=eq.${encodeURIComponent(refCode)}&select=referrer_id&limit=1`);
+  // We actually look up the referrer's ref_code from user_codes table
+  // Table: user_codes (user_id TEXT PRIMARY KEY, ref_code TEXT, balance_delta NUMERIC default 0)
+  const r = await supaFetch(`user_codes?ref_code=eq.${encodeURIComponent(refCode)}&select=user_id&limit=1`);
+  return r && r.length ? r[0].user_id : null;
+}
+
+async function supaRegisterRefCode(userId, refCode) {
+  // Upsert user's ref code so others can find it cross-browser
+  await supaFetch('user_codes?on_conflict=user_id', 'POST', { user_id: userId, ref_code: refCode, balance_delta: 0 });
+}
+
+async function supaRecordReferral(referrerId, refCode, newUsername) {
+  // Insert referral record
+  await supaFetch('referrals', 'POST', {
+    ref_code: refCode,
+    referrer_id: referrerId,
+    new_user: newUsername,
+    earned: 2,
+    date: new Date().toLocaleDateString()
+  });
+  // Increment balance_delta for the referrer
+  // We use RPC or a simple read-increment-write via PATCH
+  const cur = await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(referrerId)}&select=balance_delta`);
+  const oldDelta = (cur && cur.length) ? (cur[0].balance_delta || 0) : 0;
+  await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(referrerId)}`, 'PATCH', { balance_delta: oldDelta + 2 });
+}
+
+async function supaGetPendingDelta(userId) {
+  // Returns how much unclaimed referral bonus is waiting in Supabase
+  const r = await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(userId)}&select=balance_delta`);
+  return r && r.length ? (r[0].balance_delta || 0) : 0;
+}
+
+async function supaGetMyReferrals(userId) {
+  // Returns list of referral records for this referrer
+  const r = await supaFetch(`referrals?referrer_id=eq.${encodeURIComponent(userId)}&select=new_user,date,earned&order=date.desc`);
+  return r || [];
+}
+
+async function supaClaimDelta(userId) {
+  // Zero out the delta after we've applied it to localStorage balance
+  await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(userId)}`, 'PATCH', { balance_delta: 0 });
+}
+
+// ============================================================
+// DATA STORE (localStorage-backed)
+// ============================================================
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'admin123';
+const MIN_WITHDRAW = 50;
+
+function getStore(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function setStore(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+function getUsers() { return getStore('re_users', []); }
+function setUsers(u) { setStore('re_users', u); }
+function getWithdrawals() { return getStore('re_withdrawals', []); }
+function setWithdrawals(w) { setStore('re_withdrawals', w); }
+function getMessages() { return getStore('re_messages', []); }
+function setMessages(m) { setStore('re_messages', m); }
+function getBroadcast() { return getStore('re_broadcast', null); }
+function setBroadcast(b) { setStore('re_broadcast', b); }
+
 let currentUser = null;
-let currentProfile = null;
-let selectedPayMethod = 'easypaisa';
-let allAdminUsers = [];
+let selectedPM = null;
+let replyingTo = null;
 
-// ============================= INIT =============================
-async function init() {
-  showLoader('Initializing...');
-  try {
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    await checkFingerprint();
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      await loadUserProfile();
-      showDashboard();
-    } else {
-      hideLoader();
-      startTicker();
-      loadLandingStats();
-    }
-  } catch(e) {
-    hideLoader();
-    startTicker();
-    loadLandingStats();
-  }
+// ============================================================
+// TICKER DATA (fake rolling withdrawals)
+// ============================================================
+const tickerMethods = [
+  { method: 'EasyPaisa', prefix: '+92', suffix: '342', type: 'ep' },
+  { method: 'UPI', prefix: '', suffix: '@upi', type: 'upi' },
+  { method: 'USDT BEP20', prefix: '0x', suffix: '', type: 'usdt' },
+];
+function fakePhone(type) {
+  const rand = () => Math.floor(Math.random()*9000)+1000;
+  if (type === 'ep') return `+92 3**-***${Math.floor(Math.random()*900)+100}`;
+  if (type === 'upi') return `user${rand()}@oksbi`;
+  return `0x${[...Array(8)].map(()=>Math.floor(Math.random()*16).toString(16)).join('')}...`;
 }
-
-// ============================= DEVICE FINGERPRINT =============================
-function getDeviceFingerprint() {
-  const nav = window.navigator;
-  const raw = [
-    nav.userAgent,
-    nav.language,
-    screen.width + 'x' + screen.height,
-    screen.colorDepth,
-    nav.hardwareConcurrency,
-    nav.platform,
-    new Date().getTimezoneOffset()
-  ].join('||');
-  let hash = 0;
-  for(let i=0;i<raw.length;i++){hash=(hash<<5)-hash+raw.charCodeAt(i);hash|=0;}
-  return 'fp_'+Math.abs(hash).toString(36);
-}
-
-async function checkFingerprint() {
-  // Checked at registration time
-}
-
-// ============================= LANDING STATS =============================
-async function loadLandingStats() {
-  try {
-    const { count: total } = await supabaseClient.from('profiles').select('*', {count:'exact', head:true});
-    const { count: active } = await supabaseClient.from('profiles').select('*', {count:'exact', head:true}).eq('status','active');
-    animateCount('stat-total-users', total || 0);
-    animateCount('stat-active-users', active || 0);
-  } catch(e){}
-}
-
-function animateCount(id, target) {
-  let cur = 0;
-  const el = document.getElementById(id);
-  if(!el) return;
-  const step = Math.max(1, Math.floor(target / 40));
-  const t = setInterval(()=>{
-    cur = Math.min(cur + step, target);
-    el.textContent = cur.toLocaleString();
-    if(cur >= target) clearInterval(t);
-  }, 30);
-}
-
-// ============================= TICKER =============================
-const tickerData = [];
-function generateTickerItems() {
-  const methods = ['EasyPaisa +92***3'+Math.floor(Math.random()*9000+1000),'UPI user'+Math.floor(Math.random()*9000+1000)+'@upi','USDT 0x'+Math.random().toString(36).substr(2,8).toUpperCase()+'...'+Math.random().toString(36).substr(2,4).toUpperCase()];
+function buildTicker() {
   const items = [];
-  for(let i=0;i<12;i++){
-    const amt = (Math.random()*(50)+50).toFixed(2);
-    const method = methods[i%3];
-    items.push({method, amt});
+  for (let i = 0; i < 14; i++) {
+    const m = tickerMethods[Math.floor(Math.random()*3)];
+    const amt = (Math.random()*(100-50)+50).toFixed(2);
+    const acc = fakePhone(m.type);
+    items.push(`<span class="ticker-item">💰 <span class="amount">$${amt}</span> withdrawn via <span class="method">${m.method}</span> to ${acc}</span>`);
   }
-  return items;
+  const el = document.getElementById('ticker-scroll');
+  const html = items.join('') + items.join(''); // duplicate for seamless loop
+  el.innerHTML = html;
 }
 
-function startTicker() {
-  const items = generateTickerItems();
-  const html = [...items,...items].map(i=>`<div class="ticker-item"><span class="t-icon">💰</span> Withdrawal of $${i.amt} to ${i.method}</div>`).join('');
-  const el = document.getElementById('main-ticker');
-  if(el) el.innerHTML = html;
-}
-
-function startDashTicker() {
-  const items = generateTickerItems();
-  const html = [...items,...items].map(i=>`<div class="dt-item">💸 $${i.amt} withdrawn → ${i.method}</div>`).join('');
-  const el = document.getElementById('dash-ticker');
-  if(el) el.innerHTML = html;
-}
-
-// ============================= AUTH =============================
+// ============================================================
+// AUTH FUNCTIONS
+// ============================================================
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
-  document.getElementById('login-form').style.display = tab==='login'?'flex':'none';
-  document.getElementById('register-form').style.display = tab==='register'?'flex':'none';
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('login-form').style.display = tab==='login'?'block':'none';
+  document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
 
-async function doLogin() {
-  const ident = document.getElementById('login-ident').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  if(!ident||!pass){showToast('Fill all fields','error');return;}
-  showLoader('Authenticating...');
-  try {
-    let email = ident;
-    if(!ident.includes('@')) {
-      // look up email by username
-      const {data:prof} = await supabaseClient.from('profiles').select('email').eq('username',ident).maybeSingle();
-      if(!prof){hideLoader();showToast('User not found','error');return;}
-      email = prof.email;
+function showLoading(msg) {
+  document.getElementById('loading-text').textContent = msg || 'Processing...';
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+function generateCode(len=8) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return [...Array(len)].map(()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  if (!u || !p) { showToast('⚠️','Please fill in all fields.'); return; }
+
+  showLoading('Authenticating...');
+  setTimeout(()=>{
+    hideLoading();
+    // Admin check
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      currentUser = { id:'admin', name:'Administrator', username:'admin', email:'admin@refearn.com', role:'admin', balance:0, referrals:0, withdrawn:0, code:'ADMIN000' };
+      launchApp();
+      return;
     }
-    const {data, error} = await supabaseClient.auth.signInWithPassword({email, password:pass});
-    if(error){hideLoader();showToast(error.message,'error');return;}
-    currentUser = data.user;
-    await loadUserProfile();
-    showDashboard();
-  } catch(e){hideLoader();showToast('Login failed','error');}
+    const users = getUsers();
+    const found = users.find(x => (x.username===u || x.email===u) && x.password===p);
+    if (!found) { showToast('❌','Invalid credentials. Please try again.'); return; }
+    currentUser = found;
+    launchApp();
+  }, 1800);
 }
 
-async function doRegister() {
-  const fullname = document.getElementById('reg-fullname').value.trim();
-  const username = document.getElementById('reg-username').value.trim().toLowerCase();
-  const email = document.getElementById('reg-email').value.trim().toLowerCase();
-  const pass = document.getElementById('reg-pass').value;
-  const pass2 = document.getElementById('reg-pass2').value;
-  const inviteCode = document.getElementById('reg-invite').value.trim().toUpperCase();
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value.trim();
+  const pass2 = document.getElementById('reg-pass2').value.trim();
+  const refCode = document.getElementById('reg-ref').value.trim().toUpperCase();
 
-  if(!fullname||!username||!email||!pass){showToast('Fill all required fields','error');return;}
-  if(pass!==pass2){showToast('Passwords do not match','error');return;}
-  if(pass.length<6){showToast('Password min 6 chars','error');return;}
+  if (!name || !username || !email || !pass) { showToast('⚠️','Please fill all required fields.'); return; }
+  if (pass !== pass2) { showToast('❌','Passwords do not match!'); return; }
+  if (pass.length < 6) { showToast('⚠️','Password must be at least 6 characters.'); return; }
 
-  showLoader('Creating account...');
-  try {
-    // Check device fingerprint for multi-account
-    const fp = getDeviceFingerprint();
-    const {data: fpCheck} = await supabaseClient.from('profiles').select('id').eq('device_fp', fp).maybeSingle();
-    if(fpCheck){hideLoader();showToast('Multiple accounts from same device not allowed','error');return;}
+  const users = getUsers();
+  if (users.find(x=>x.username===username)) { showToast('❌','Username already taken. Choose another.'); return; }
+  if (users.find(x=>x.email===email)) { showToast('❌','Email already registered.'); return; }
 
-    // Check username taken
-    const {data: unCheck} = await supabaseClient.from('profiles').select('id').eq('username',username).maybeSingle();
-    if(unCheck){hideLoader();showToast('Username taken','error');return;}
+  showLoading('Creating your account...');
 
-    // Validate invite code if provided
-    let referrerId = null;
-    if(inviteCode) {
-      const {data: refProf} = await supabaseClient.from('profiles').select('id').eq('referral_code',inviteCode).maybeSingle();
-      if(!refProf){hideLoader();showToast('Invalid invite code','error');return;}
-      referrerId = refProf.id;
-    }
-
-    // Sign up
-    const {data, error} = await supabaseClient.auth.signUp({email, password:pass, options:{data:{fullname,username}}});
-    if(error){hideLoader();showToast(error.message,'error');return;}
-
-    const uid = data.user.id;
-    const refCode = username.toUpperCase().substr(0,4) + Math.floor(1000+Math.random()*9000);
-
-    // Get signup bonus from settings
-    const signupBonus = await getSetting('signup_bonus', 5);
-
-    // Create profile
-    await supabaseClient.from('profiles').insert({
-      id: uid, fullname, username, email, referral_code: refCode,
-      balance: signupBonus, total_earned: signupBonus, referred_by: referrerId,
-      status: 'active', device_fp: fp, created_at: new Date().toISOString()
-    });
-
-    // Add bonus transaction
-    await supabaseClient.from('transactions').insert({
-      user_id: uid, type: 'signup_bonus', amount: signupBonus,
-      note: 'Welcome bonus', created_at: new Date().toISOString()
-    });
-
-    // Credit referrer
-    if(referrerId) {
-      const refBonus = await getSetting('referral_bonus', 2);
-      // Update referrer balance
-      const {data: rp} = await supabaseClient.from('profiles').select('balance,total_earned,referral_count').eq('id',referrerId).single();
-      await supabaseClient.from('profiles').update({
-        balance: (rp.balance||0)+refBonus,
-        total_earned: (rp.total_earned||0)+refBonus,
-        referral_count: (rp.referral_count||0)+1
-      }).eq('id',referrerId);
-      // Log transaction
-      await supabaseClient.from('transactions').insert({
-        user_id: referrerId, type: 'referral_bonus', amount: refBonus,
-        note: 'Referral bonus from '+username, created_at: new Date().toISOString()
-      });
-      // Log referral record
-      await supabaseClient.from('referrals').insert({
-        referrer_id: referrerId, referred_id: uid,
-        bonus_amount: refBonus, created_at: new Date().toISOString()
-      });
-    }
-
-    currentUser = data.user;
-    await loadUserProfile();
-    showDashboard();
-    showToast('Welcome! $'+signupBonus+' added to your account 🎉','success');
-  } catch(e){hideLoader();showToast('Registration failed: '+e.message,'error');}
-}
-
-async function doLogout() {
-  showLoader('Logging out...');
-  await supabaseClient.auth.signOut();
-  currentUser = null; currentProfile = null;
-  hideDashboard();
-  hideLoader();
-  startTicker();
-  loadLandingStats();
-}
-
-// ============================= PROFILE LOAD =============================
-async function loadUserProfile() {
-  showLoader('Loading profile...');
-  try {
-    const {data: prof, error} = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-    if(error || !prof) throw new Error('Profile not found');
-    currentProfile = prof;
-    updateUIWithProfile(prof);
-  } catch(e){showToast('Error loading profile','error');}
-}
-
-function updateUIWithProfile(p) {
-  const bal = parseFloat(p.balance||0).toFixed(2);
-  const earned = parseFloat(p.total_earned||0).toFixed(2);
-  const refs = p.referral_count||0;
-
-  document.getElementById('nav-balance-val').textContent = '$'+bal;
-  document.getElementById('dash-balance').textContent = '$'+bal;
-  document.getElementById('dash-referrals').textContent = refs;
-  document.getElementById('dash-earned').textContent = '$'+earned;
-  document.getElementById('dash-pending').textContent = '$'+parseFloat(p.pending_withdrawal||0).toFixed(2);
-  document.getElementById('dash-withdrawn').textContent = '$'+parseFloat(p.total_withdrawn||0).toFixed(2);
-
-  const initial = (p.fullname||p.username||'U')[0].toUpperCase();
-  document.getElementById('drawer-avatar').textContent = initial;
-  document.getElementById('drawer-name').textContent = p.fullname||p.username;
-  document.getElementById('drawer-email').textContent = p.email;
-
-  document.getElementById('profile-avatar-letter').textContent = initial;
-  document.getElementById('profile-fullname').textContent = p.fullname||p.username;
-  document.getElementById('profile-email-show').textContent = p.email;
-  document.getElementById('profile-username').textContent = '@'+p.username;
-  document.getElementById('profile-joined').textContent = p.created_at ? new Date(p.created_at).toLocaleDateString() : '—';
-  document.getElementById('profile-refcode').textContent = p.referral_code;
-  document.getElementById('profile-balance').textContent = '$'+bal;
-  document.getElementById('profile-refs').textContent = refs;
-  document.getElementById('profile-status').textContent = p.status==='suspended'?'⛔ Suspended':'✅ Active';
-
-  const refCode = p.referral_code;
-  document.getElementById('ref-code-display').textContent = refCode;
-  const refLink = window.location.href.split('?')[0]+'?ref='+refCode;
-  document.getElementById('ref-link-input').value = refLink;
-  document.getElementById('ris-total').textContent = refs;
-  document.getElementById('ris-earned').textContent = '$'+(refs*2);
-
-  if(p.status==='suspended') {
-    document.getElementById('suspended-banner').style.display='block';
-  }
-
-  // Show admin button if admin
-  if(p.username===ADMIN_USERNAME || p.email===ADMIN_EMAIL) {
-    document.getElementById('admin-menu-btn').style.display='flex';
-  }
-}
-
-// ============================= NAVIGATION =============================
-function showDashboard() {
-  document.getElementById('landing-page').style.display = 'none';
-  document.getElementById('admin-page').style.display = 'none';
-  document.getElementById('dashboard-page').style.display = 'flex';
-  startDashTicker();
-  loadNotifications();
-  loadReferrals();
-  loadWithdrawalHistory();
-  loadHelpMessages();
-  hideLoader();
-}
-
-function hideDashboard() {
-  document.getElementById('landing-page').style.display = 'flex';
-  document.getElementById('dashboard-page').style.display = 'none';
-  document.getElementById('admin-page').style.display = 'none';
-}
-
-function showAdminPage() {
-  closeDrawer();
-  document.getElementById('dashboard-page').style.display = 'none';
-  document.getElementById('admin-page').style.display = 'flex';
-  loadAdminStats();
-  loadAdminUsers();
-  loadAdminWithdrawals();
-  loadAdminMessages();
-}
-
-function showSection(name) {
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.drawer-item').forEach(d=>d.classList.remove('active'));
-  document.getElementById('sec-'+name)?.classList.add('active');
-}
-
-function toggleDrawer() {
-  document.getElementById('hamburger').classList.toggle('open');
-  document.getElementById('side-drawer').classList.toggle('open');
-  document.getElementById('drawer-overlay').classList.toggle('open');
-}
-function closeDrawer() {
-  document.getElementById('hamburger').classList.remove('open');
-  document.getElementById('side-drawer').classList.remove('open');
-  document.getElementById('drawer-overlay').classList.remove('open');
-}
-
-let notifOpen = false;
-function toggleNotif() {
-  notifOpen = !notifOpen;
-  document.getElementById('notif-panel').classList.toggle('open', notifOpen);
-  if(notifOpen) markNotificationsRead();
-}
-document.addEventListener('click', e=>{
-  if(notifOpen && !e.target.closest('.notif-btn') && !e.target.closest('.notif-panel')) {
-    notifOpen=false;
-    document.getElementById('notif-panel').classList.remove('open');
-  }
-});
-
-// ============================= NOTIFICATIONS =============================
-async function loadNotifications() {
-  if(!currentUser) return;
-  try {
-    const {data} = await supabaseClient.from('notifications').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
-    const list = document.getElementById('notif-list');
-    if(!data||!data.length){list.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--text3)">No notifications</div>';return;}
-    const unread = data.filter(n=>!n.read).length;
-    if(unread>0) document.getElementById('notif-dot').classList.add('show');
-    list.innerHTML = data.map(n=>`<div class="notif-entry ${n.read?'':'ne-unread'}">
-      <div class="ne-title">${n.title||'Notification'}</div>
-      <div class="ne-body">${n.body||''}</div>
-      <div class="ne-time">${timeAgo(n.created_at)}</div>
-    </div>`).join('');
-  } catch(e){}
-}
-
-async function markNotificationsRead() {
-  if(!currentUser) return;
-  document.getElementById('notif-dot').classList.remove('show');
-  await supabaseClient.from('notifications').update({read:true}).eq('user_id',currentUser.id).eq('read',false);
-}
-
-// ============================= REFERRALS =============================
-async function loadReferrals() {
-  if(!currentProfile) return;
-  try {
-    const {data} = await supabaseClient.from('referrals').select('*, profiles:referred_id(username,created_at)').eq('referrer_id',currentUser.id).order('created_at',{ascending:false});
-    const container = document.getElementById('invite-list-container');
-    if(!data||!data.length){container.innerHTML='<p style="font-size:13px;color:var(--text3);text-align:center;padding:20px">No referrals yet. Share your code!</p>';return;}
-    container.innerHTML = data.map(r=>`<div class="invite-item">
-      <div><div class="invite-user">@${r.profiles?.username||'user'}</div><div class="invite-date">${timeAgo(r.created_at)}</div></div>
-      <div class="invite-earn">+$${r.bonus_amount||2}</div>
-    </div>`).join('');
-  } catch(e){}
-}
-
-// ============================= WITHDRAWAL =============================
-function selectPayMethod(method, el) {
-  selectedPayMethod = method;
-  document.querySelectorAll('.pay-method').forEach(m=>m.classList.remove('active'));
-  el.classList.add('active');
-  const labels = {easypaisa:'EasyPaisa Number',upi:'UPI ID',usdt:'USDT BEP20 Address'};
-  const placeholders = {easypaisa:'+92 3XX XXXXXXX',upi:'yourname@upi',usdt:'0x... BEP20 address'};
-  document.getElementById('w-account-label').textContent = labels[method];
-  document.getElementById('w-account').placeholder = placeholders[method];
-}
-
-async function submitWithdrawal() {
-  if(!currentProfile) return;
-  const account = document.getElementById('w-account').value.trim();
-  const amount = parseFloat(document.getElementById('w-amount').value);
-  if(!account){showToast('Enter your account details','error');return;}
-  if(!amount||isNaN(amount)||amount<=0){showToast('Enter a valid amount','error');return;}
-
-  // Check balance
-  const balance = parseFloat(currentProfile.balance||0);
-  if(amount > balance){showToast('Insufficient balance','error');return;}
-
-  // Minimum withdrawal check (hidden initially)
-  const minWd = await getSetting('min_withdrawal', 50);
-  if(amount < minWd){showToast(`Minimum withdrawal is $${minWd}. Please reach this amount first.`,'error');return;}
-
-  if(currentProfile.status==='suspended'){showToast('Account suspended','error');return;}
-
-  showLoader('Submitting request...');
-  try {
-    await supabaseClient.from('withdrawals').insert({
-      user_id: currentUser.id,
-      method: selectedPayMethod,
-      account_detail: account,
-      amount,
-      status: 'pending',
-      created_at: new Date().toISOString()
-    });
-
-    // Deduct from balance
-    await supabaseClient.from('profiles').update({
-      balance: balance - amount,
-      pending_withdrawal: (parseFloat(currentProfile.pending_withdrawal||0)) + amount
-    }).eq('id', currentUser.id);
-
-    await loadUserProfile();
-    await loadWithdrawalHistory();
-    document.getElementById('w-account').value='';
-    document.getElementById('w-amount').value='';
-    hideLoader();
-    showToast('Withdrawal request submitted! Processing in 24–72 hours.','success');
-  } catch(e){hideLoader();showToast('Error: '+e.message,'error');}
-}
-
-async function loadWithdrawalHistory() {
-  if(!currentUser) return;
-  try {
-    const {data} = await supabaseClient.from('withdrawals').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
-    const container = document.getElementById('withdrawal-history-list');
-    if(!data||!data.length){container.innerHTML='<p style="font-size:13px;color:var(--text3);text-align:center;padding:20px">No withdrawal requests yet.</p>';return;}
-    container.innerHTML = data.map(w=>`<div class="wh-item">
-      <div class="wh-info">
-        <div class="wh-method">${methodLabel(w.method)} · ${w.account_detail}</div>
-        <div class="wh-date">${timeAgo(w.created_at)}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <span class="wh-status ${w.status}">${w.status}</span>
-        <span class="wh-amount">$${parseFloat(w.amount).toFixed(2)}</span>
-      </div>
-    </div>`).join('');
-  } catch(e){}
-}
-
-function methodLabel(m){return{easypaisa:'EasyPaisa',upi:'UPI',usdt:'USDT'}[m]||m;}
-
-// ============================= HELP MESSAGES =============================
-async function sendHelpMessage() {
-  const subject = document.getElementById('help-subject').value.trim();
-  const msg = document.getElementById('help-msg').value.trim();
-  if(!subject||!msg){showToast('Enter subject and message','error');return;}
-  showLoader('Sending...');
-  try {
-    await supabaseClient.from('support_messages').insert({
-      user_id: currentUser.id,
-      username: currentProfile?.username,
-      subject, message: msg,
-      status: 'open',
-      created_at: new Date().toISOString()
-    });
-    document.getElementById('help-subject').value='';
-    document.getElementById('help-msg').value='';
-    hideLoader();
-    showToast('Message sent to support!','success');
-    loadHelpMessages();
-  } catch(e){hideLoader();showToast('Error sending message','error');}
-}
-
-async function loadHelpMessages() {
-  if(!currentUser) return;
-  try {
-    const {data} = await supabaseClient.from('support_messages').select('*, support_replies(*)').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(10);
-    const container = document.getElementById('help-chat-list');
-    if(!data||!data.length){container.innerHTML='';return;}
-    container.innerHTML = data.map(m=>`
-      <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:10px">
-        <div style="font-size:12px;color:var(--text3);margin-bottom:6px">${timeAgo(m.created_at)} · ${m.status}</div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:4px">${m.subject}</div>
-        <div class="hc-msg"><div class="hc-from">You</div><div class="hc-text">${m.message}</div></div>
-        ${(m.support_replies||[]).map(r=>`<div class="hc-msg reply"><div class="hc-from">Support</div><div class="hc-text">${r.reply}</div></div>`).join('')}
-      </div>
-    `).join('');
-  } catch(e){}
-}
-
-// ============================= COPY REF LINK =============================
-function copyRefLink() {
-  const val = document.getElementById('ref-link-input').value;
-  navigator.clipboard.writeText(val).then(()=>showToast('Link copied!','success')).catch(()=>{
-    document.getElementById('ref-link-input').select();
-    document.execCommand('copy');
-    showToast('Link copied!','success');
-  });
-}
-
-// ============================= ADMIN FUNCTIONS =============================
-async function loadAdminStats() {
-  try {
-    const [{count:tu},{count:au},{count:su},{count:pwd}] = await Promise.all([
-      supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
-      supabaseClient.from('profiles').select('*',{count:'exact',head:true}).eq('status','active'),
-      supabaseClient.from('profiles').select('*',{count:'exact',head:true}).eq('status','suspended'),
-      supabaseClient.from('withdrawals').select('*',{count:'exact',head:true}).eq('status','pending')
-    ]);
-    const {data:paidData} = await supabaseClient.from('withdrawals').select('amount').eq('status','approved');
-    const totalPaid = (paidData||[]).reduce((s,r)=>s+parseFloat(r.amount||0),0);
-    const {data:bonusData} = await supabaseClient.from('transactions').select('amount').eq('type','signup_bonus');
-    const totalBonus = (bonusData||[]).reduce((s,r)=>s+parseFloat(r.amount||0),0);
-
-    document.getElementById('a-total-users').textContent = tu||0;
-    document.getElementById('a-active-users').textContent = au||0;
-    document.getElementById('a-suspended').textContent = su||0;
-    document.getElementById('a-pending-wd').textContent = pwd||0;
-    document.getElementById('a-total-paid').textContent = '$'+totalPaid.toFixed(0);
-    document.getElementById('a-total-bonus').textContent = '$'+totalBonus.toFixed(0);
-  } catch(e){}
-}
-
-async function loadAdminUsers() {
-  try {
-    const {data} = await supabaseClient.from('profiles').select('*').order('created_at',{ascending:false}).limit(200);
-    allAdminUsers = data||[];
-    renderAdminUsers(allAdminUsers);
-  } catch(e){}
-}
-
-function renderAdminUsers(users) {
-  const tbody = document.getElementById('admin-users-tbody');
-  if(!users.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3)">No users</td></tr>';return;}
-  tbody.innerHTML = users.map(u=>`<tr>
-    <td><div style="font-size:13px;font-weight:500">${u.username}</div><div style="font-size:11px;color:var(--text3)">${u.email}</div></td>
-    <td style="color:var(--green)">$${parseFloat(u.balance||0).toFixed(2)}</td>
-    <td>${u.referral_count||0}</td>
-    <td><span class="badge ${u.status||'active'}">${u.status||'active'}</span></td>
-    <td style="display:flex;gap:4px;flex-wrap:wrap">
-      ${u.status==='suspended'
-        ?`<button class="action-btn activate" onclick="changeUserStatus('${u.id}','active')">Activate</button>`
-        :`<button class="action-btn suspend" onclick="changeUserStatus('${u.id}','suspended')">Suspend</button>`
-      }
-      <button class="action-btn approve" onclick="manualCredit('${u.id}')">+$</button>
-    </td>
-  </tr>`).join('');
-}
-
-function filterAdminUsers() {
-  const q = document.getElementById('user-search').value.toLowerCase();
-  renderAdminUsers(allAdminUsers.filter(u=>(u.username||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)));
-}
-
-async function changeUserStatus(uid, status) {
-  await supabaseClient.from('profiles').update({status}).eq('id',uid);
-  showToast('User status updated','success');
-  loadAdminUsers();
-  loadAdminStats();
-}
-
-async function manualCredit(uid) {
-  const amt = parseFloat(prompt('Enter amount to credit ($):'));
-  if(!amt||isNaN(amt)){return;}
-  const {data:p} = await supabaseClient.from('profiles').select('balance,total_earned').eq('id',uid).single();
-  await supabaseClient.from('profiles').update({balance:(p.balance||0)+amt,total_earned:(p.total_earned||0)+amt}).eq('id',uid);
-  await supabaseClient.from('transactions').insert({user_id:uid,type:'manual_credit',amount:amt,note:'Admin manual credit',created_at:new Date().toISOString()});
-  showToast('$'+amt+' credited','success');
-  loadAdminUsers();
-}
-
-async function loadAdminWithdrawals() {
-  try {
-    const {data} = await supabaseClient.from('withdrawals').select('*, profiles:user_id(username,email)').order('created_at',{ascending:false}).limit(200);
-    const tbody = document.getElementById('admin-wd-tbody');
-    if(!data||!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No withdrawals</td></tr>';return;}
-    tbody.innerHTML = data.map(w=>`<tr>
-      <td><div style="font-size:13px">${w.profiles?.username||'—'}</div><div style="font-size:11px;color:var(--text3)">${w.profiles?.email||''}</div></td>
-      <td>${methodLabel(w.method)}</td>
-      <td style="font-size:12px;color:var(--text2)">${w.account_detail}</td>
-      <td style="font-weight:700;color:var(--yellow)">$${parseFloat(w.amount).toFixed(2)}</td>
-      <td><span class="badge ${w.status}">${w.status}</span></td>
-      <td style="display:flex;gap:4px">
-        ${w.status==='pending'?`
-          <button class="action-btn approve" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount})">Approve</button>
-          <button class="action-btn reject" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount})">Reject</button>
-        `:'—'}
-      </td>
-    </tr>`).join('');
-  } catch(e){}
-}
-
-async function approveWithdrawal(wid, uid, amount) {
-  await supabaseClient.from('withdrawals').update({status:'approved'}).eq('id',wid);
-  const {data:p} = await supabaseClient.from('profiles').select('pending_withdrawal,total_withdrawn').eq('id',uid).single();
-  await supabaseClient.from('profiles').update({
-    pending_withdrawal: Math.max(0,(p.pending_withdrawal||0)-amount),
-    total_withdrawn: (p.total_withdrawn||0)+amount
-  }).eq('id',uid);
-  // Send notification to user
-  await supabaseClient.from('notifications').insert({user_id:uid,title:'Withdrawal Approved',body:`Your withdrawal of $${amount} has been approved and processed.`,read:false,created_at:new Date().toISOString()});
-  showToast('Withdrawal approved','success');
-  loadAdminWithdrawals();
-  loadAdminStats();
-}
-
-async function rejectWithdrawal(wid, uid, amount) {
-  await supabaseClient.from('withdrawals').update({status:'rejected'}).eq('id',wid);
-  // Refund balance
-  const {data:p} = await supabaseClient.from('profiles').select('balance,pending_withdrawal').eq('id',uid).single();
-  await supabaseClient.from('profiles').update({
-    balance:(p.balance||0)+amount,
-    pending_withdrawal:Math.max(0,(p.pending_withdrawal||0)-amount)
-  }).eq('id',uid);
-  await supabaseClient.from('notifications').insert({user_id:uid,title:'Withdrawal Rejected',body:`Your withdrawal of $${amount} was rejected. Amount refunded to balance.`,read:false,created_at:new Date().toISOString()});
-  showToast('Withdrawal rejected & refunded','success');
-  loadAdminWithdrawals();
-}
-
-async function loadAdminMessages() {
-  try {
-    const {data} = await supabaseClient.from('support_messages').select('*, support_replies(*)').order('created_at',{ascending:false}).limit(100);
-    const container = document.getElementById('admin-messages-list');
-    if(!data||!data.length){container.innerHTML='<p style="color:var(--text3);font-size:13px;text-align:center;padding:20px">No messages</p>';return;}
-    container.innerHTML = data.map(m=>`
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div>
-            <div style="font-size:14px;font-weight:600">${m.subject}</div>
-            <div style="font-size:12px;color:var(--text3)">@${m.username||'user'} · ${timeAgo(m.created_at)}</div>
-          </div>
-          <span class="badge ${m.status==='open'?'pending':'active'}">${m.status}</span>
-        </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);margin-bottom:10px">${m.message}</div>
-        ${(m.support_replies||[]).map(r=>`<div style="background:rgba(247,201,79,0.07);border-left:3px solid var(--yellow);border-radius:0 10px 10px 0;padding:10px;font-size:13px;margin-bottom:6px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Admin Reply</div>${r.reply}</div>`).join('')}
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;outline:none" placeholder="Type reply..." id="reply-input-${m.id}">
-          <button class="action-btn approve" onclick="sendAdminReply('${m.id}','${m.user_id}')">Send</button>
-        </div>
-      </div>
-    `).join('');
-  } catch(e){}
-}
-
-async function sendAdminReply(msgId, userId) {
-  const input = document.getElementById('reply-input-'+msgId);
-  const reply = input?.value.trim();
-  if(!reply) return;
-  await supabaseClient.from('support_replies').insert({message_id:msgId,reply,created_at:new Date().toISOString()});
-  await supabaseClient.from('support_messages').update({status:'replied'}).eq('id',msgId);
-  await supabaseClient.from('notifications').insert({user_id:userId,title:'Support Reply',body:reply,read:false,created_at:new Date().toISOString()});
-  showToast('Reply sent','success');
-  loadAdminMessages();
-}
-
-async function broadcastMessage() {
-  const title = document.getElementById('bc-title').value.trim();
-  const body = document.getElementById('bc-body').value.trim();
-  if(!title||!body){showToast('Enter title and message','error');return;}
-  showLoader('Sending broadcast...');
-  try {
-    const {data:users} = await supabaseClient.from('profiles').select('id');
-    const inserts = (users||[]).map(u=>({user_id:u.id,title,body,read:false,created_at:new Date().toISOString()}));
-    if(inserts.length) await supabaseClient.from('notifications').insert(inserts);
-    hideLoader();
-    document.getElementById('bc-title').value='';
-    document.getElementById('bc-body').value='';
-    showToast('Broadcast sent to '+inserts.length+' users','success');
-  } catch(e){hideLoader();showToast('Error sending broadcast','error');}
-}
-
-async function saveSettings() {
-  const signupBonus = parseFloat(document.getElementById('set-signup-bonus').value)||5;
-  const refBonus = parseFloat(document.getElementById('set-ref-bonus').value)||2;
-  const minWd = parseFloat(document.getElementById('set-min-wd').value)||50;
-  try {
-    const upsert = async (key, value) => {
-      const {data} = await supabaseClient.from('settings').select('id').eq('key',key).maybeSingle();
-      if(data) await supabaseClient.from('settings').update({value:String(value)}).eq('key',key);
-      else await supabaseClient.from('settings').insert({key,value:String(value)});
+  (async () => {
+    const code = generateCode();
+    const newUserId = 'u_' + Date.now();
+    const newUser = {
+      id: newUserId,
+      name, username, email, password: pass,
+      role: 'user',
+      balance: 5, // sign-up bonus
+      referrals: 0,
+      withdrawn: 0,
+      code,
+      joined: new Date().toLocaleDateString(),
+      referredBy: refCode || null,
+      referralHistory: [],
+      messages: [],
+      notification: getBroadcast()
     };
-    await Promise.all([upsert('signup_bonus',signupBonus),upsert('referral_bonus',refBonus),upsert('min_withdrawal',minWd)]);
-    showToast('Settings saved','success');
-  } catch(e){showToast('Error saving settings','error');}
+
+    // Register this user's ref code in Supabase so others can find them cross-browser
+    await supaRegisterRefCode(newUserId, code);
+
+    // Handle referral — try localStorage first, then Supabase for cross-browser
+    if (refCode) {
+      const localRefIdx = users.findIndex(x => x.code === refCode);
+      if (localRefIdx !== -1) {
+        // Referrer exists in same browser localStorage — credit locally
+        users[localRefIdx].balance = (users[localRefIdx].balance || 0) + 2;
+        users[localRefIdx].referrals = (users[localRefIdx].referrals || 0) + 1;
+        users[localRefIdx].referralHistory = users[localRefIdx].referralHistory || [];
+        users[localRefIdx].referralHistory.push({ user: username, date: new Date().toLocaleDateString(), earned: 2 });
+        users[localRefIdx].pendingRefNotif = users[localRefIdx].pendingRefNotif || [];
+        users[localRefIdx].pendingRefNotif.push(username);
+      } else {
+        // Referrer is on a DIFFERENT browser — find via Supabase and credit via cloud
+        const referrerId = await supaGetReferrerByCode(refCode);
+        if (referrerId) {
+          await supaRecordReferral(referrerId, refCode, username);
+        }
+      }
+    }
+
+    users.push(newUser);
+    setUsers(users);
+    updateAuthStats();
+    hideLoading();
+    currentUser = newUser;
+    showToast('🎉','Account created! $5 bonus added to your wallet!');
+    setTimeout(launchApp, 800);
+  })();
 }
 
-async function getSetting(key, fallback) {
-  try {
-    const {data} = await supabaseClient.from('settings').select('value').eq('key',key).maybeSingle();
-    return data ? parseFloat(data.value) : fallback;
-  } catch(e){return fallback;}
+function doLogout() {
+  clearSession();
+  currentUser = null;
+  document.getElementById('main-app').classList.remove('show');
+  document.getElementById('auth-screen').style.display = 'flex';
+  switchTab('login');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
 }
 
-function showAdminSection(name) {
-  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('admin-sec-'+name)?.classList.add('active');
-  document.querySelectorAll('.admin-sidebar a,.mat-btn').forEach((el,i)=>{
-    const names=['overview','users','withdrawals','messages','broadcast','settings'];
-    el.classList.toggle('active', el.textContent.toLowerCase().includes(name)||names[i]===name);
+function launchApp() {
+  saveSession(currentUser);
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-app').classList.add('show');
+
+  // Set user info
+  const u = currentUser;
+  document.getElementById('sidebar-username').textContent = u.username;
+  document.getElementById('sidebar-role').textContent = u.role === 'admin' ? '🔐 Administrator' : '⭐ Member';
+  document.getElementById('sidebar-avatar').textContent = u.name.charAt(0).toUpperCase();
+  document.getElementById('topbar-avatar').textContent = u.name.charAt(0).toUpperCase();
+
+  if (u.role === 'admin') {
+    document.getElementById('admin-nav-item').style.display = 'flex';
+  }
+
+  buildTicker();
+  // Register user's ref code in Supabase on every login (ensures cross-browser visibility)
+  if (currentUser.role !== 'admin') {
+    supaRegisterRefCode(currentUser.id, currentUser.code).catch(()=>{});
+  }
+  refreshDashboard();
+  checkBroadcast();
+  updateAuthStats();
+  showPage('dashboard');
+}
+
+// ============================================================
+// PAGE ROUTING
+// ============================================================
+const pageNames = { dashboard:'Dashboard', referral:'Referral', withdraw:'Withdrawal', policy:'Policy', about:'About', help:'Help & Support', admin:'Admin Panel' };
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.getElementById('topbar-title').textContent = pageNames[id] || id;
+  if (id === 'admin' && currentUser?.role === 'admin') {
+    document.getElementById('admin-panel').classList.add('show');
+    refreshAdmin();
+  }
+  if (id === 'withdraw') refreshWithdrawPage();
+  if (id === 'referral') refreshReferralPage();
+  if (id === 'help') refreshHelpPage();
+  closeSidebar();
+}
+
+// ============================================================
+// SIDEBAR
+// ============================================================
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+// ============================================================
+// DASHBOARD REFRESH
+// ============================================================
+async function refreshDashboard() {
+  if (!currentUser) return;
+  // Re-fetch user from store (to get latest balance)
+  if (currentUser.role !== 'admin') {
+    const users = getUsers();
+    const fresh = users.find(x=>x.id===currentUser.id);
+    if (fresh) currentUser = fresh;
+
+    // Show instant notification(s) for new referrals credited on same browser
+    if (currentUser.pendingRefNotif && currentUser.pendingRefNotif.length) {
+      currentUser.pendingRefNotif.forEach(uname=>{
+        showToast('🎉', `@${uname} joined using your link! +$2.00 added to your balance.`);
+      });
+      currentUser.pendingRefNotif = [];
+      const idx = users.findIndex(x=>x.id===currentUser.id);
+      if (idx !== -1) { users[idx].pendingRefNotif = []; setUsers(users); }
+    }
+
+    // Check Supabase for cross-browser referral bonuses
+    try {
+      const delta = await supaGetPendingDelta(currentUser.id);
+      if (delta && delta > 0) {
+        // Fetch referral history records from Supabase and sync locally
+        const supaRefs = await supaGetMyReferrals(currentUser.id);
+        const localHistory = currentUser.referralHistory || [];
+        const localUsers = new Set(localHistory.map(r => r.user));
+        let newCount = 0;
+        supaRefs.forEach(r => {
+          if (!localUsers.has(r.new_user)) {
+            localHistory.push({ user: r.new_user, date: r.date, earned: r.earned });
+            showToast('🎉', `@${r.new_user} joined using your link! +$${r.earned.toFixed(2)} added.`);
+            newCount++;
+          }
+        });
+
+        // Apply balance delta and referral count
+        const allUsers = getUsers();
+        const idx = allUsers.findIndex(x => x.id === currentUser.id);
+        if (idx !== -1) {
+          allUsers[idx].balance = (allUsers[idx].balance || 0) + delta;
+          allUsers[idx].referrals = (allUsers[idx].referrals || 0) + newCount;
+          allUsers[idx].referralHistory = localHistory;
+          setUsers(allUsers);
+          currentUser = allUsers[idx];
+        }
+
+        // Clear the delta in Supabase so we don't double-credit
+        await supaClaimDelta(currentUser.id);
+      }
+    } catch(e) { /* Supabase unreachable — continue with local data */ }
+  }
+  document.getElementById('dash-balance').textContent = '$' + (currentUser.balance||0).toFixed(2);
+  document.getElementById('dash-referrals').textContent = currentUser.referrals||0;
+  document.getElementById('dash-withdrawn').textContent = '$' + (currentUser.withdrawn||0).toFixed(2);
+  const users = getUsers();
+  const sorted = [...users].sort((a,b)=>(b.referrals||0)-(a.referrals||0));
+  const rank = sorted.findIndex(x=>x.id===currentUser.id)+1;
+  document.getElementById('dash-rank').textContent = rank > 0 ? rank : '—';
+}
+
+function checkBroadcast() {
+  const bc = getBroadcast();
+  if (bc) {
+    document.getElementById('notif-title').textContent = bc.title;
+    document.getElementById('notif-msg').textContent = bc.msg;
+    document.getElementById('notif-banner').classList.add('show');
+    document.getElementById('notif-dot').classList.add('show');
+  }
+}
+function closeNotif() {
+  document.getElementById('notif-banner').classList.remove('show');
+  document.getElementById('notif-dot').classList.remove('show');
+}
+
+// ============================================================
+// REFERRAL PAGE
+// ============================================================
+function refreshReferralPage() {
+  if (!currentUser) return;
+  document.getElementById('ref-code-display').textContent = currentUser.code;
+  document.getElementById('ref-link-display').textContent = `https://refearn.netlify.app/?ref=${currentUser.code}`;
+
+  const tbody = document.getElementById('referral-table-body');
+  const hist = currentUser.referralHistory || [];
+  if (!hist.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="e-icon">🔗</div><p>No referrals yet. Share your code!</p></div></td></tr>`;
+  } else {
+    tbody.innerHTML = hist.map((r,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td>@${r.user}</td>
+        <td>${r.date}</td>
+        <td style="color:var(--accent2);font-weight:700;">+$${r.earned.toFixed(2)}</td>
+        <td><span class="badge-success">Credited</span></td>
+      </tr>
+    `).join('');
+  }
+}
+
+function copyRefCode() {
+  navigator.clipboard.writeText(currentUser.code||'').catch(()=>{});
+  showToast('📋','Referral code copied!');
+}
+function copyRefLink() {
+  navigator.clipboard.writeText(`https://refearn.netlify.app/?ref=${currentUser.code}`).catch(()=>{});
+  showToast('🔗','Referral link copied!');
+}
+
+// ============================================================
+// WITHDRAW PAGE
+// ============================================================
+function refreshWithdrawPage() {
+  if (!currentUser) return;
+  if (currentUser.role !== 'admin') {
+    const users = getUsers();
+    const fresh = users.find(x=>x.id===currentUser.id);
+    if (fresh) currentUser = fresh;
+  }
+  document.getElementById('withdraw-balance').textContent = '$'+(currentUser.balance||0).toFixed(2);
+
+  // History
+  const wds = getWithdrawals().filter(w=>w.userId===currentUser.id);
+  const histEl = document.getElementById('withdraw-history');
+  if (!wds.length) {
+    histEl.innerHTML = `<div class="empty-state"><div class="e-icon">📋</div><p>No withdrawal requests yet.</p></div>`;
+  } else {
+    histEl.innerHTML = wds.map(w=>`
+      <div class="wr-item">
+        <div style="flex:1;">
+          <div class="wr-amt">$${w.amount.toFixed(2)}</div>
+          <div class="wr-method">${w.method} · ${w.account}</div>
+          <div class="wr-date">${w.date}</div>
+        </div>
+        <span class="${w.status==='approved'?'badge-done':'badge-pending'}">${w.status==='approved'?'✅ Approved':'⏳ Pending'}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function selectPM(pm) {
+  selectedPM = pm;
+  document.querySelectorAll('.pm-option').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('pm-'+pm).classList.add('selected');
+  document.getElementById('pm-fields').style.display = 'block';
+  const labels = { easypaisa:'EasyPaisa Number (e.g. +92 3XX XXXXXXX)', upi:'UPI ID (e.g. name@bank)', usdt:'USDT BEP20 Wallet Address' };
+  document.getElementById('pm-field-label').textContent = labels[pm];
+  document.getElementById('pm-account').placeholder = { easypaisa:'+92 3XX XXXXXXX', upi:'yourname@oksbi', usdt:'0x...' }[pm];
+}
+
+function submitWithdraw() {
+  if (!selectedPM) { showToast('⚠️','Please select a payment method.'); return; }
+  const account = document.getElementById('pm-account').value.trim();
+  const amount = parseFloat(document.getElementById('pm-amount').value);
+  if (!account) { showToast('⚠️','Please enter your account details.'); return; }
+  if (!amount || amount <= 0) { showToast('⚠️','Please enter a valid amount.'); return; }
+
+  const bal = currentUser.balance || 0;
+  if (amount > bal) { showToast('❌','Insufficient balance!'); return; }
+
+  // Check min $50 — only shown AFTER submission attempt
+  if (amount < MIN_WITHDRAW) {
+    openModal('Minimum Withdrawal Required',
+      `<p style="color:var(--muted);font-size:0.9rem;line-height:1.7;">To ensure secure processing, a minimum balance of <strong style="color:var(--accent2);">$${MIN_WITHDRAW}.00</strong> is required to withdraw. Your current balance is <strong style="color:var(--red);">$${bal.toFixed(2)}</strong>. Keep inviting friends to reach the threshold!</p>`,
+      null
+    );
+    return;
+  }
+
+  openModal('Confirm Withdrawal',
+    `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:0.88rem;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--muted);">Amount</span><strong>$${amount.toFixed(2)}</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--muted);">Method</span><strong>${selectedPM.toUpperCase()}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Account</span><strong style="word-break:break-all;">${account}</strong></div>
+    </div>`,
+    ()=>{
+      const users = getUsers();
+      const idx = users.findIndex(x=>x.id===currentUser.id);
+      if (idx !== -1) {
+        users[idx].balance -= amount;
+        users[idx].withdrawn = (users[idx].withdrawn||0) + amount;
+        setUsers(users);
+        currentUser = users[idx];
+      }
+      const wds = getWithdrawals();
+      wds.unshift({ id:'wd_'+Date.now(), userId:currentUser.id, username:currentUser.username, amount, method:selectedPM, account, status:'pending', date:new Date().toLocaleDateString() });
+      setWithdrawals(wds);
+      refreshWithdrawPage();
+      refreshDashboard();
+      closeModal();
+      showToast('✅','Withdrawal request submitted! Processing within 24–72hrs.');
+    }
+  );
+}
+
+// ============================================================
+// HELP PAGE
+// ============================================================
+function refreshHelpPage() {
+  const msgs = getMessages().filter(m=>m.userId===currentUser.id);
+  const el = document.getElementById('help-messages-list');
+  if (!msgs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="e-icon">💬</div><p>No messages yet. Send one above!</p></div>`;
+  } else {
+    el.innerHTML = msgs.map(m=>`
+      <div class="msg-bubble">
+        <div class="msg-meta">🙋 You · ${m.date} · <em>${m.subject}</em></div>
+        <div class="msg-text">${m.message}</div>
+        ${m.reply ? `<div class="msg-reply"><div class="reply-label">📩 Admin Reply</div>${m.reply}</div>` : ''}
+      </div>
+    `).join('');
+  }
+}
+
+function sendHelpMessage() {
+  const sub = document.getElementById('help-subject').value.trim();
+  const msg = document.getElementById('help-message').value.trim();
+  if (!sub || !msg) { showToast('⚠️','Please fill in subject and message.'); return; }
+  const msgs = getMessages();
+  msgs.unshift({ id:'msg_'+Date.now(), userId:currentUser.id, username:currentUser.username, subject:sub, message:msg, date:new Date().toLocaleDateString(), reply:null, read:false });
+  setMessages(msgs);
+  document.getElementById('help-subject').value = '';
+  document.getElementById('help-message').value = '';
+  showToast('📤','Message sent to admin!');
+  refreshHelpPage();
+  // update admin badge
+  const unread = msgs.filter(m=>!m.read).length;
+  document.getElementById('admin-badge').textContent = unread;
+  document.getElementById('admin-badge').classList.toggle('show', unread > 0);
+}
+
+// ============================================================
+// ADMIN PANEL
+// ============================================================
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach((t,i)=>{
+    const tabs = ['users','withdrawals','messages','broadcast'];
+    t.classList.toggle('active', tabs[i]===tab);
   });
-  if(name==='users') loadAdminUsers();
-  if(name==='withdrawals') loadAdminWithdrawals();
-  if(name==='messages') loadAdminMessages();
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('admin-tab-'+tab).classList.add('active');
 }
 
-// ============================= UTILITIES =============================
-function showLoader(text='Loading...') {
-  document.getElementById('loader-text').textContent = text;
-  document.getElementById('loading-overlay').classList.remove('hidden');
+function refreshAdmin() {
+  const users = getUsers();
+  const wds = getWithdrawals();
+  const msgs = getMessages();
+
+  // Stats
+  document.getElementById('a-total-users').textContent = users.length;
+  document.getElementById('a-pending-wd').textContent = wds.filter(w=>w.status==='pending').length;
+  document.getElementById('a-total-paid').textContent = '$'+wds.filter(w=>w.status==='approved').reduce((s,w)=>s+w.amount,0).toFixed(0);
+  document.getElementById('a-messages').textContent = msgs.length;
+
+  // Users table
+  document.getElementById('admin-users-table').innerHTML = users.length ? users.map(u=>`
+    <tr>
+      <td><strong>${u.username}</strong><br><span style="font-size:0.75rem;color:var(--muted);">${u.name}</span></td>
+      <td style="color:var(--muted);font-size:0.82rem;">${u.email}</td>
+      <td style="color:var(--accent2);font-weight:700;">$${(u.balance||0).toFixed(2)}</td>
+      <td>${u.referrals||0}</td>
+      <td style="color:var(--muted);font-size:0.8rem;">${u.joined||'—'}</td>
+      <td><button class="action-btn view" onclick='adminAdjustBalance("${u.id}")'>💰 Adjust</button></td>
+    </tr>
+  `).join('') : '<tr><td colspan="6"><div class="empty-state"><div class="e-icon">👥</div><p>No users yet.</p></div></td></tr>';
+
+  // Withdrawals table
+  document.getElementById('admin-wd-table').innerHTML = wds.length ? wds.map(w=>`
+    <tr>
+      <td><strong>${w.username}</strong></td>
+      <td style="color:var(--accent2);font-weight:700;">$${w.amount.toFixed(2)}</td>
+      <td>${w.method?.toUpperCase()}</td>
+      <td style="font-size:0.78rem;word-break:break-all;">${w.account}</td>
+      <td style="font-size:0.78rem;color:var(--muted);">${w.date}</td>
+      <td><span class="${w.status==='approved'?'badge-done':'badge-pending'}">${w.status==='approved'?'Approved':'Pending'}</span></td>
+      <td style="display:flex;gap:6px;">
+        ${w.status==='pending'?`<button class="action-btn approve" onclick='approveWd("${w.id}")'>✅</button><button class="action-btn reject" onclick='rejectWd("${w.id}")'>❌</button>`:'—'}
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="7"><div class="empty-state"><div class="e-icon">💸</div><p>No withdrawal requests.</p></div></td></tr>';
+
+  // Messages
+  document.getElementById('admin-messages-list').innerHTML = msgs.length ? msgs.map(m=>`
+    <div class="msg-bubble" style="margin-bottom:12px;">
+      <div class="msg-meta">🙋 @${m.username} · ${m.date} · <em>${m.subject}</em></div>
+      <div class="msg-text">${m.message}</div>
+      ${m.reply ? `<div class="msg-reply"><div class="reply-label">✅ Replied</div>${m.reply}</div>` : `<button class="action-btn reply" style="margin-top:10px;" onclick='openReply("${m.id}")'>📩 Reply</button>`}
+    </div>
+  `).join('') : '<div class="empty-state"><div class="e-icon">💬</div><p>No support messages.</p></div>';
 }
-function hideLoader() {
-  document.getElementById('loading-overlay').classList.add('hidden');
+
+function adminAdjustBalance(userId) {
+  const amt = prompt('Enter amount to add (positive) or deduct (negative):');
+  if (amt === null) return;
+  const n = parseFloat(amt);
+  if (isNaN(n)) { showToast('❌','Invalid amount.'); return; }
+  const users = getUsers();
+  const idx = users.findIndex(x=>x.id===userId);
+  if (idx===-1) return;
+  users[idx].balance = Math.max(0, (users[idx].balance||0) + n);
+  setUsers(users);
+  showToast('✅',`Balance adjusted by $${n} for @${users[idx].username}`);
+  refreshAdmin();
 }
+
+function approveWd(id) {
+  const wds = getWithdrawals();
+  const idx = wds.findIndex(w=>w.id===id);
+  if (idx===-1) return;
+  wds[idx].status = 'approved';
+  setWithdrawals(wds);
+  showToast('✅','Withdrawal approved!');
+  refreshAdmin();
+}
+
+function rejectWd(id) {
+  const wds = getWithdrawals();
+  const idx = wds.findIndex(w=>w.id===id);
+  if (idx===-1) return;
+  // Refund
+  const users = getUsers();
+  const uIdx = users.findIndex(u=>u.id===wds[idx].userId);
+  if (uIdx!==-1) {
+    users[uIdx].balance = (users[uIdx].balance||0) + wds[idx].amount;
+    users[uIdx].withdrawn = Math.max(0,(users[uIdx].withdrawn||0)-wds[idx].amount);
+    setUsers(users);
+  }
+  wds.splice(idx,1);
+  setWithdrawals(wds);
+  showToast('♻️','Withdrawal rejected. Balance refunded.');
+  refreshAdmin();
+}
+
+function openReply(msgId) {
+  replyingTo = msgId;
+  const msgs = getMessages();
+  const m = msgs.find(x=>x.id===msgId);
+  document.getElementById('reply-modal-body').innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:0.85rem;">
+      <strong>@${m.username}</strong> · ${m.subject}<br>
+      <span style="color:var(--muted);">${m.message}</span>
+    </div>`;
+  document.getElementById('reply-text').value = '';
+  document.getElementById('reply-modal-overlay').classList.add('show');
+}
+function closeReplyModal() {
+  document.getElementById('reply-modal-overlay').classList.remove('show');
+  replyingTo = null;
+}
+function sendReply() {
+  const reply = document.getElementById('reply-text').value.trim();
+  if (!reply) { showToast('⚠️','Enter a reply first.'); return; }
+  const msgs = getMessages();
+  const idx = msgs.findIndex(m=>m.id===replyingTo);
+  if (idx===-1) return;
+  msgs[idx].reply = reply;
+  msgs[idx].read = true;
+  setMessages(msgs);
+  closeReplyModal();
+  showToast('📩','Reply sent!');
+  refreshAdmin();
+}
+
+function broadcastMessage() {
+  const title = document.getElementById('bc-title').value.trim();
+  const msg = document.getElementById('bc-message').value.trim();
+  if (!title || !msg) { showToast('⚠️','Please enter title and message.'); return; }
+  setBroadcast({ title, msg, date: new Date().toLocaleDateString() });
+  document.getElementById('bc-title').value = '';
+  document.getElementById('bc-message').value = '';
+  showToast('📢','Broadcast sent to all users!');
+  // Show for current admin too
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-msg').textContent = msg;
+  document.getElementById('notif-banner').classList.add('show');
+}
+
+// ============================================================
+// MODALS & TOAST
+// ============================================================
+let modalConfirmFn = null;
+function openModal(title, body, onConfirm) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  modalConfirmFn = onConfirm;
+  const btn = document.getElementById('modal-confirm-btn');
+  if (onConfirm) {
+    btn.style.display = 'block';
+    btn.onclick = onConfirm;
+  } else {
+    btn.style.display = 'none';
+  }
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
 
 let toastTimer;
-function showToast(msg, type='success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'show '+type;
+function showToast(icon, text) {
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove('show'),3000);
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-text').textContent = text;
+  document.getElementById('toast').classList.add('show');
+  toastTimer = setTimeout(()=>document.getElementById('toast').classList.remove('show'), 3200);
 }
 
-function timeAgo(dateStr) {
-  if(!dateStr) return '—';
-  const d = new Date(dateStr);
-  const diff = Math.floor((Date.now()-d.getTime())/1000);
-  if(diff<60) return diff+'s ago';
-  if(diff<3600) return Math.floor(diff/60)+'m ago';
-  if(diff<86400) return Math.floor(diff/3600)+'h ago';
-  return d.toLocaleDateString();
+// ============================================================
+// AUTH STATS — auto-increment every ~45s to feel live
+// ============================================================
+function updateAuthStats() {
+  const users = getUsers();
+  // Seed base grows over real time: started at 24000, grows ~120/day
+  const seedTime = getStore('re_seed_time', null);
+  const now = Date.now();
+  if (!seedTime) setStore('re_seed_time', now);
+  const elapsed = now - (seedTime || now); // ms since first visit
+  const daysElapsed = elapsed / (1000 * 60 * 60 * 24);
+  const growth = Math.floor(daysElapsed * 120); // ~120 new users per day
+  const base = 24000 + growth + users.length;
+  const active = Math.round(base * 0.26);
+  document.getElementById('auth-total-users').textContent = base.toLocaleString();
+  document.getElementById('auth-active-users').textContent = active.toLocaleString();
 }
 
-// Handle ?ref= in URL for auto-fill
-const urlRef = new URLSearchParams(window.location.search).get('ref');
-if(urlRef) {
-  window.addEventListener('load', ()=>{
-    const el = document.getElementById('reg-invite');
-    if(el) el.value = urlRef;
+// Slowly tick stats up while on auth screen (every 45s +1)
+function startStatsTicker() {
+  setInterval(()=>{
+    if (document.getElementById('auth-screen').style.display !== 'none') {
+      const el = document.getElementById('auth-total-users');
+      const el2 = document.getElementById('auth-active-users');
+      if (el) {
+        const cur = parseInt(el.textContent.replace(/,/g,'')) || 24000;
+        const next = cur + Math.floor(Math.random()*3)+1;
+        el.textContent = next.toLocaleString();
+        el2.textContent = Math.round(next * 0.26).toLocaleString();
+      }
+    }
+  }, 45000);
+}
+
+// ============================================================
+// SESSION PERSISTENCE — stay logged in on refresh
+// ============================================================
+function saveSession(user) {
+  try { localStorage.setItem('re_session', JSON.stringify({ id: user.id, role: user.role })); } catch {}
+}
+function clearSession() {
+  try { localStorage.removeItem('re_session'); } catch {}
+}
+function restoreSession() {
+  try {
+    const s = localStorage.getItem('re_session');
+    if (!s) return false;
+    const { id, role } = JSON.parse(s);
+    if (role === 'admin') {
+      currentUser = { id:'admin', name:'Administrator', username:'admin', email:'admin@refearn.com', role:'admin', balance:0, referrals:0, withdrawn:0, code:'ADMIN000' };
+      launchApp();
+      return true;
+    }
+    const users = getUsers();
+    const found = users.find(x => x.id === id);
+    if (found) { currentUser = found; launchApp(); return true; }
+    clearSession();
+    return false;
+  } catch { return false; }
+}
+
+// ============================================================
+// AUTO-FILL REFERRAL CODE FROM URL (?ref=XXXXXXXX)
+// ============================================================
+function checkUrlRef() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) {
+    // Switch to register tab and fill the code
     switchTab('register');
-  });
+    const input = document.getElementById('reg-ref');
+    if (input) input.value = ref.toUpperCase();
+  }
 }
 
-// Start
-init();
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', ()=>{
+  updateAuthStats();
+  buildTicker();
+  startStatsTicker();
+  // Try restoring session — if logged in skip auth screen
+  if (!restoreSession()) {
+    document.getElementById('auth-screen').style.display = 'flex';
+    checkUrlRef();
+  }
+  // Auto re-ticker every 30s
+  setInterval(buildTicker, 30000);
+});
 </script>
 </body>
 </html>
