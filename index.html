@@ -1153,7 +1153,7 @@
 
       <!-- AD SLOT 1: Monetag In-Page Push (Banner) — Dashboard -->
       <div class="ad-slot ad-monetag-push" id="ad-monetag-push">
-        here Ads code paste
+        here Ads code paste 
       </div>
 
       <!-- How It Works -->
@@ -1500,43 +1500,60 @@
 // SUPABASE CONFIG — used ONLY for referral system
 // ============================================================
 const SUPA_URL = 'https://czvxpyvpqjdhbegiotjr.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6dnhweXZwcWpkaGJlZ2lvdGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjQ2ODcsImV4cCI6MjA5Njg0MDY4N30.khC3HoKM_QuWjpeXZDb6LRMpfkvk6UA5xe4yXHMS9JhI';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6dnhweXZwcWpkaGJlZ2lvdGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjQ2ODcsImV4cCI6MjA5Njg0MDY4N30.khC3HoKM_QuWjpeXZD6LRMpfkvk6UA5xe4yXHMS9JhI';
 
 // Generic Supabase REST helper
-async function supaFetch(path, method='GET', body=null) {
-  const opts = {
-    method,
-    headers: {
+async function supaFetch(path, method = 'GET', body = null) {
+  try {
+    const headers = {
       'apikey': SUPA_KEY,
       'Authorization': 'Bearer ' + SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
-    }
-  };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(SUPA_URL + '/rest/v1/' + path, opts);
-  if (!res.ok) return null;
-  try { return await res.json(); } catch { return null; }
+      'Content-Type': 'application/json'
+    };
+    if (method === 'POST') headers['Prefer'] = 'return=representation';
+    if (method === 'PATCH') headers['Prefer'] = 'return=representation';
+
+    const opts = { method, headers };
+    if (body) opts.body = JSON.stringify(body);
+
+    const res = await fetch(SUPA_URL + '/rest/v1/' + path, opts);
+    const text = await res.text();
+    if (!text) return null;
+    return JSON.parse(text);
+  } catch (e) {
+    console.warn('Supabase fetch error:', e);
+    return null;
+  }
 }
 
-// ---- Referral table helpers ----
-// Table: referrals (ref_code TEXT, referrer_id TEXT, new_user TEXT, earned NUMERIC, date TEXT)
+// ---- Referral Supabase helpers ----
 
+// Look up who owns a ref_code (returns user_id or null)
 async function supaGetReferrerByCode(refCode) {
-  const rows = await supaFetch(`referrals?ref_code=eq.${encodeURIComponent(refCode)}&select=referrer_id&limit=1`);
-  // We actually look up the referrer's ref_code from user_codes table
-  // Table: user_codes (user_id TEXT PRIMARY KEY, ref_code TEXT, balance_delta NUMERIC default 0)
-  const r = await supaFetch(`user_codes?ref_code=eq.${encodeURIComponent(refCode)}&select=user_id&limit=1`);
-  return r && r.length ? r[0].user_id : null;
+  const r = await supaFetch('user_codes?select=user_id&ref_code=eq.' + encodeURIComponent(refCode) + '&limit=1');
+  return (r && r.length) ? r[0].user_id : null;
 }
 
+// Upsert: register/update this user's ref code in Supabase
 async function supaRegisterRefCode(userId, refCode) {
-  // Upsert user's ref code so others can find it cross-browser
-  await supaFetch('user_codes?on_conflict=user_id', 'POST', { user_id: userId, ref_code: refCode, balance_delta: 0 });
+  // Try update first (user already exists)
+  const existing = await supaFetch('user_codes?select=user_id&user_id=eq.' + encodeURIComponent(userId) + '&limit=1');
+  if (existing && existing.length) {
+    // Already registered — just make sure ref_code is correct
+    await supaFetch('user_codes?user_id=eq.' + encodeURIComponent(userId), 'PATCH', { ref_code: refCode });
+  } else {
+    // New insert
+    await supaFetch('user_codes', 'POST', { user_id: userId, ref_code: refCode, balance_delta: 0 });
+  }
 }
 
+// Record a cross-browser referral and add $2 pending bonus for the referrer
 async function supaRecordReferral(referrerId, refCode, newUsername) {
-  // Insert referral record
+  // Check: don't double-credit same new_user for same referrer
+  const dup = await supaFetch('referrals?select=id&referrer_id=eq.' + encodeURIComponent(referrerId) + '&new_user=eq.' + encodeURIComponent(newUsername) + '&limit=1');
+  if (dup && dup.length) return; // already recorded
+
+  // Insert referral log
   await supaFetch('referrals', 'POST', {
     ref_code: refCode,
     referrer_id: referrerId,
@@ -1544,28 +1561,28 @@ async function supaRecordReferral(referrerId, refCode, newUsername) {
     earned: 2,
     date: new Date().toLocaleDateString()
   });
-  // Increment balance_delta for the referrer
-  // We use RPC or a simple read-increment-write via PATCH
-  const cur = await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(referrerId)}&select=balance_delta`);
-  const oldDelta = (cur && cur.length) ? (cur[0].balance_delta || 0) : 0;
-  await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(referrerId)}`, 'PATCH', { balance_delta: oldDelta + 2 });
+
+  // Atomically increment balance_delta
+  const cur = await supaFetch('user_codes?select=balance_delta&user_id=eq.' + encodeURIComponent(referrerId) + '&limit=1');
+  const oldDelta = (cur && cur.length) ? (parseFloat(cur[0].balance_delta) || 0) : 0;
+  await supaFetch('user_codes?user_id=eq.' + encodeURIComponent(referrerId), 'PATCH', { balance_delta: oldDelta + 2 });
 }
 
+// Get pending (unclaimed) referral bonus for this user
 async function supaGetPendingDelta(userId) {
-  // Returns how much unclaimed referral bonus is waiting in Supabase
-  const r = await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(userId)}&select=balance_delta`);
-  return r && r.length ? (r[0].balance_delta || 0) : 0;
+  const r = await supaFetch('user_codes?select=balance_delta&user_id=eq.' + encodeURIComponent(userId) + '&limit=1');
+  return (r && r.length) ? (parseFloat(r[0].balance_delta) || 0) : 0;
 }
 
+// Get all referral records for this user from Supabase
 async function supaGetMyReferrals(userId) {
-  // Returns list of referral records for this referrer
-  const r = await supaFetch(`referrals?referrer_id=eq.${encodeURIComponent(userId)}&select=new_user,date,earned&order=date.desc`);
+  const r = await supaFetch('referrals?select=new_user,date,earned&referrer_id=eq.' + encodeURIComponent(userId) + '&order=id.desc');
   return r || [];
 }
 
+// After crediting locally, zero out the pending delta in Supabase
 async function supaClaimDelta(userId) {
-  // Zero out the delta after we've applied it to localStorage balance
-  await supaFetch(`user_codes?user_id=eq.${encodeURIComponent(userId)}`, 'PATCH', { balance_delta: 0 });
+  await supaFetch('user_codes?user_id=eq.' + encodeURIComponent(userId), 'PATCH', { balance_delta: 0 });
 }
 
 // ============================================================
@@ -1701,25 +1718,33 @@ function doRegister() {
       notification: getBroadcast()
     };
 
-    // Register this user's ref code in Supabase so others can find them cross-browser
+    // Register this user's ref code in Supabase so they can be found cross-browser
     await supaRegisterRefCode(newUserId, code);
 
-    // Handle referral — try localStorage first, then Supabase for cross-browser
+    // ---- Handle referral bonus ----
     if (refCode) {
-      const localRefIdx = users.findIndex(x => x.code === refCode);
-      if (localRefIdx !== -1) {
-        // Referrer exists in same browser localStorage — credit locally
-        users[localRefIdx].balance = (users[localRefIdx].balance || 0) + 2;
-        users[localRefIdx].referrals = (users[localRefIdx].referrals || 0) + 1;
-        users[localRefIdx].referralHistory = users[localRefIdx].referralHistory || [];
-        users[localRefIdx].referralHistory.push({ user: username, date: new Date().toLocaleDateString(), earned: 2 });
-        users[localRefIdx].pendingRefNotif = users[localRefIdx].pendingRefNotif || [];
-        users[localRefIdx].pendingRefNotif.push(username);
-      } else {
-        // Referrer is on a DIFFERENT browser — find via Supabase and credit via cloud
-        const referrerId = await supaGetReferrerByCode(refCode);
-        if (referrerId) {
-          await supaRecordReferral(referrerId, refCode, username);
+      // ANTI-FRAUD: a user cannot refer themselves or someone on the same device
+      const isSelfReferral = users.some(x => x.code === refCode && x.id === newUserId);
+      if (!isSelfReferral) {
+        const localRefIdx = users.findIndex(x => x.code === refCode);
+        if (localRefIdx !== -1) {
+          // Referrer found in SAME browser localStorage
+          // Anti-abuse: check they haven't already referred this email/username
+          const alreadyReferred = (users[localRefIdx].referralHistory || []).some(r => r.user === username);
+          if (!alreadyReferred) {
+            users[localRefIdx].balance = (users[localRefIdx].balance || 0) + 2;
+            users[localRefIdx].referrals = (users[localRefIdx].referrals || 0) + 1;
+            users[localRefIdx].referralHistory = users[localRefIdx].referralHistory || [];
+            users[localRefIdx].referralHistory.push({ user: username, date: new Date().toLocaleDateString(), earned: 2 });
+            users[localRefIdx].pendingRefNotif = users[localRefIdx].pendingRefNotif || [];
+            users[localRefIdx].pendingRefNotif.push(username);
+          }
+        } else {
+          // Referrer is on a DIFFERENT device/browser — credit via Supabase
+          const referrerId = await supaGetReferrerByCode(refCode);
+          if (referrerId) {
+            await supaRecordReferral(referrerId, refCode, username);
+          }
         }
       }
     }
